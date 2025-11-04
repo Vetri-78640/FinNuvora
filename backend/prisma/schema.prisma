@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User table - stores user account info
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // One user can have many portfolios
+  portfolios Portfolio[]
+  
+  @@map("users")
+}
+
+// Portfolio table - stores portfolio info
+model Portfolio {
+  id            String     @id @default(cuid())
+  userId        String
+  name          String
+  description   String?
+  totalValue    Float      @default(0)
+  totalInvested Float      @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  // Foreign key linking to User
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings Holding[]
+  
+  @@index([userId])
+  @@map("portfolios")
+}
+
+// Holding table - stores individual stock holdings in a portfolio
+model Holding {
+  id          String     @id @default(cuid())
+  portfolioId String
+  symbol      String
+  quantity    Float
+  buyPrice    Float
+  currentPrice Float     @default(0)
+  purchaseDate DateTime
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Foreign key linking to Portfolio
+  portfolio   Portfolio  @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  
+  @@index([portfolioId])
+  @@map("holdings")
+}
