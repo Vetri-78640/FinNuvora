@@ -9,6 +9,10 @@ const holdingRoutes = require('./routes/holdingRoutes');
 const userRoutes = require('./routes/userRoutes');
 const priceHistoryRoutes = require('./routes/priceHistoryRoutes');
 const preferencesRoutes = require('./routes/preferencesRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
+const goalRoutes = require('./routes/goalRoutes');
+const insightsRoutes = require('./routes/insightsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +28,10 @@ app.use('/api/holding', holdingRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/price', priceHistoryRoutes);
 app.use('/api/preferences', preferencesRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/insights', insightsRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

@@ -1,10 +1,10 @@
 const express = require('express');
 const {
-  createHolding,
-  getHoldingsByPortfolio,
-  getHoldingById,
-  updateHolding,
-  deleteHolding
+    createHolding,
+    getHoldingsByPortfolio,
+    getHoldingById,
+    updateHolding,
+    deleteHolding
 } = require('../controllers/holdingController');
 const auth = require('../middleware/auth');
 

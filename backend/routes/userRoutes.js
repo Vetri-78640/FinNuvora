@@ -1,8 +1,8 @@
 const express = require('express');
 const {
-  getProfile,
-  updateProfile,
-  changePassword
+    getProfile,
+    updateProfile,
+    changePassword
 } = require('../controllers/userController');
 const auth = require('../middleware/auth');
 

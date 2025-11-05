@@ -1,8 +1,8 @@
 const express = require('express');
 const {
-  recordPriceHistory,
-  getPriceHistory,
-  getLatestPrice
+    recordPriceHistory,
+    getPriceHistory,
+    getLatestPrice
 } = require('../controllers/priceHistoryController');
 const auth = require('../middleware/auth');
 
