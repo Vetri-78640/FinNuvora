@@ -1,14 +1,19 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const connectMongoDB = require('./config/mongodb');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const holdingRoutes = require('./routes/holdingRoutes');
 const userRoutes = require('./routes/userRoutes');
+const priceHistoryRoutes = require('./routes/priceHistoryRoutes');
+const preferencesRoutes = require('./routes/preferencesRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+connectMongoDB();
 
 app.use(express.json());
 app.use(cors());
@@ -17,6 +22,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/holding', holdingRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/price', priceHistoryRoutes);
+app.use('/api/preferences', preferencesRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
