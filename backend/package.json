@@ -6,7 +6,8 @@
     "dev": "node server.js",
     "start": "node server.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "seed": "node seed.js"
   },
   "keywords": [],
   "author": "",
