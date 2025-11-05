@@ -1,17 +1,12 @@
-// Portfolio controller
-// This handles all portfolio operations: create, read, update, delete
-
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-// CREATE - Create a new portfolio
 const createPortfolio = async (req, res, next) => {
   try {
     const { name, description } = req.body;
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
 
-    // Validation
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -19,7 +14,6 @@ const createPortfolio = async (req, res, next) => {
       });
     }
 
-    // Create portfolio in database
     const portfolio = await prisma.portfolio.create({
       data: {
         userId,
@@ -41,9 +35,8 @@ const createPortfolio = async (req, res, next) => {
 // READ - Get all portfolios for logged-in user
 const getPortfolios = async (req, res, next) => {
   try {
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
 
-    // Find all portfolios for this user
     const portfolios = await prisma.portfolio.findMany({
       where: { userId },
       include: {
@@ -64,9 +57,8 @@ const getPortfolios = async (req, res, next) => {
 const getPortfolioById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
 
-    // Find portfolio and verify user owns it
     const portfolio = await prisma.portfolio.findUnique({
       where: { id },
       include: { holdings: true }
@@ -79,7 +71,6 @@ const getPortfolioById = async (req, res, next) => {
       });
     }
 
-    // Check if user owns this portfolio
     if (portfolio.userId !== userId) {
       return res.status(403).json({
         success: false,
@@ -101,9 +92,8 @@ const updatePortfolio = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
 
-    // Find portfolio
     const portfolio = await prisma.portfolio.findUnique({
       where: { id }
     });
@@ -115,7 +105,6 @@ const updatePortfolio = async (req, res, next) => {
       });
     }
 
-    // Check if user owns this portfolio
     if (portfolio.userId !== userId) {
       return res.status(403).json({
         success: false,
@@ -123,7 +112,6 @@ const updatePortfolio = async (req, res, next) => {
       });
     }
 
-    // Update portfolio
     const updatedPortfolio = await prisma.portfolio.update({
       where: { id },
       data: {
@@ -146,9 +134,8 @@ const updatePortfolio = async (req, res, next) => {
 const deletePortfolio = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
 
-    // Find portfolio
     const portfolio = await prisma.portfolio.findUnique({
       where: { id }
     });
@@ -160,7 +147,6 @@ const deletePortfolio = async (req, res, next) => {
       });
     }
 
-    // Check if user owns this portfolio
     if (portfolio.userId !== userId) {
       return res.status(403).json({
         success: false,
@@ -168,7 +154,6 @@ const deletePortfolio = async (req, res, next) => {
       });
     }
 
-    // Delete portfolio (holdings will auto-delete due to cascade)
     await prisma.portfolio.delete({
       where: { id }
     });
