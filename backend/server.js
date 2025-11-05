@@ -13,6 +13,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const goalRoutes = require('./routes/goalRoutes');
 const insightsRoutes = require('./routes/insightsRoutes');
+const stockRoutes = require('./routes/stockRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/stocks', stockRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
