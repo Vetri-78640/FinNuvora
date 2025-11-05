@@ -1,18 +1,15 @@
 // Authentication controller
 // This file contains all auth logic: register, login
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); //I have it for Pass hashing
+const jwt = require('jsonwebtoken'); //Normal JWT lib
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-// REGISTER - Create a new user
 const register = async (req, res, next) => {
   try {
     const { email, password, name } = req.body;
-
-    // Validation - check all fields are provided
     if (!email || !password || !name) {
       return res.status(400).json({
         success: false,
@@ -20,7 +17,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
@@ -32,7 +28,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Hash password - bcrypt makes it secure
+    // Hash pass - bcrypt makes it secure
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user in database
