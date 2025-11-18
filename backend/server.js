@@ -4,6 +4,7 @@ const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const connectMongoDB = require('./config/mongodb');
 const errorHandler = require('./middleware/errorHandler');
+const { authLimiter } = require('./middleware/rateLimiter');
 const authRoutes = require('./routes/authRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const holdingRoutes = require('./routes/holdingRoutes');
@@ -19,12 +20,22 @@ const stockRoutes = require('./routes/stockRoutes');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' })); // Limit JSON payload
 app.use(fileUpload({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
   useTempFiles: true,
   tempFileDir: '/tmp/',
 }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
@@ -32,6 +43,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Rate limiting - only on auth endpoints (custom email-based limiter)
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', authLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolio', portfolioRoutes);

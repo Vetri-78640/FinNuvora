@@ -63,8 +63,6 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
       <div className="w-full max-w-md">
         <div className="mb-10 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-500 rounded-3xl mx-auto mb-6 shadow-2xl shadow-blue-500/30">
-          </div>
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Create Account</h1>
           <p className="text-slate-400">Join FinNuvora today</p>
         </div>

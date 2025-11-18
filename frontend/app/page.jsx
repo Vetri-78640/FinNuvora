@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCookie } from '@/lib/cookies';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { useEffect, useState } from 'react';
 
 const testimonials = [
   {
@@ -35,31 +37,8 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/30">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-500 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-            </div>
-            <span className="font-bold text-xl text-white tracking-tight">FinNuvora</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/auth/login" 
-              className="hidden md:inline-block px-5 py-2 rounded-lg text-slate-300 hover:text-white transition-colors"
-            >
-              Sign in
-            </Link>
-            <button 
-              onClick={handleCta}
-              className="btn-primary text-sm"
-            >
-              {isAuthenticated ? 'Dashboard' : 'Get Started'}
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col">
+      <Navbar />
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6">
@@ -238,44 +217,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/30 bg-slate-900/50 py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-white mb-4">FinNuvora</h3>
-              <p className="text-slate-400 text-sm">Intelligent wealth management for everyone.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/security" className="hover:text-white transition-colors">Security</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
-                <li><Link href="/compliance" className="hover:text-white transition-colors">Compliance</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-800/30 pt-8 text-center text-slate-400 text-sm">
-            <p>&copy; 2025 FinNuvora. All rights reserved. Built with care for modern wealth.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

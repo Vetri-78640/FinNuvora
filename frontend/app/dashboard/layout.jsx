@@ -77,8 +77,6 @@ export default function DashboardLayout({ children }) {
         {/* Logo Section */}
         <div className="p-6 border-b border-slate-800/30 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3 flex-1">
-            <div className="w-11 h-11 bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-500 rounded-3xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all">
-            </div>
             {isSidebarOpen && (
               <div className="flex flex-col gap-0.5">
                 <span className="font-bold text-white text-base tracking-tight">FinNuvora</span>

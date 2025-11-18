@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { isValidEmail, validatePasswordStrength, isValidName, sanitizeInput } = require('../utils/validation');
 
 const register = async (req, res, next) => {
   try {
@@ -12,7 +13,32 @@ const register = async (req, res, next) => {
       });
     }
 
-    const normalizedEmail = email.toLowerCase();
+    // Validate email format
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format'
+      });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password too weak. Requirements: min 8 chars, uppercase, lowercase, number, special char (!@#$%^&*)'
+      });
+    }
+
+    // Validate name
+    if (!isValidName(name)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid name format'
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
 
