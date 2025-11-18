@@ -1,8 +1,17 @@
+const mongoose = require('mongoose');
 const PriceHistory = require('../models/PriceHistory');
 
 const recordPriceHistory = async (req, res, next) => {
   try {
     const { symbol, price } = req.body;
+    const userId = req.userId;
+
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
 
     if (!symbol || !price) {
       return res.status(400).json({
@@ -18,10 +27,18 @@ const recordPriceHistory = async (req, res, next) => {
       });
     }
 
-    const priceRecord = new PriceHistory({
+    const payload = {
       symbol: symbol.toUpperCase(),
       price: parseFloat(price),
       source: 'manual'
+    };
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      payload.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    const priceRecord = new PriceHistory({
+      ...payload
     });
 
     await priceRecord.save();
@@ -39,6 +56,7 @@ const recordPriceHistory = async (req, res, next) => {
 const getPriceHistory = async (req, res, next) => {
   try {
     const { symbol, days } = req.query;
+    const userId = req.userId;
 
     if (!symbol) {
       return res.status(400).json({
@@ -51,10 +69,23 @@ const getPriceHistory = async (req, res, next) => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysBack);
 
-    const history = await PriceHistory.find({
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const query = {
       symbol: symbol.toUpperCase(),
       timestamp: { $gte: startDate }
-    }).sort({ timestamp: -1 });
+    };
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      query.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    const history = await PriceHistory.find(query).sort({ timestamp: -1 });
 
     res.json({
       success: true,
@@ -69,6 +100,7 @@ const getPriceHistory = async (req, res, next) => {
 const getLatestPrice = async (req, res, next) => {
   try {
     const { symbol } = req.params;
+    const userId = req.userId;
 
     if (!symbol) {
       return res.status(400).json({
@@ -77,9 +109,19 @@ const getLatestPrice = async (req, res, next) => {
       });
     }
 
-    const latestPrice = await PriceHistory.findOne({
-      symbol: symbol.toUpperCase()
-    }).sort({ timestamp: -1 });
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const query = { symbol: symbol.toUpperCase() };
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      query.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    const latestPrice = await PriceHistory.findOne(query).sort({ timestamp: -1 });
 
     if (!latestPrice) {
       return res.status(404).json({

@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This schema is ONLY for MySQL Authentication
+// All financial data (transactions, goals, insights) remains in MongoDB
 
 generator client {
   provider = "prisma-client-js"
@@ -10,113 +10,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User table - stores user account info
 model User {
   id        String     @id @default(cuid())
+  name      String
   email     String     @unique
   password  String
-  name      String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  
-  portfolios Portfolio[]
-  transactions Transaction[]
-  categories Category[]
-  goals Goal[]
-  
-  @@map("users")
+
+  // Relations (optional, for future use)
+  sessions  Session[]
 }
 
-// Portfolio table - stores portfolio info
-model Portfolio {
-  id            String     @id @default(cuid())
-  userId        String
-  name          String
-  description   String?
-  totalValue    Float      @default(0)
-  totalInvested Float      @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  
-  // Foreign key linking to User
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  holdings Holding[]
-  
-  @@index([userId])
-  @@map("portfolios")
-}
-
-// Holding table - stores individual stock holdings in a portfolio
-model Holding {
-  id          String     @id @default(cuid())
-  portfolioId String
-  symbol      String
-  quantity    Float
-  buyPrice    Float
-  currentPrice Float     @default(0)
-  purchaseDate DateTime
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Foreign key linking to Portfolio
-  portfolio   Portfolio  @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  
-  @@index([portfolioId])
-  @@map("holdings")
-}
-
-model Category {
-  id        String     @id @default(cuid())
+model Session {
+  id        String   @id @default(cuid())
   userId    String
-  name      String
-  color     String?    @default("#3B82F6")
-  icon      String?
-  createdAt DateTime   @default(now())
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  
-  @@unique([userId, name])
-  @@index([userId])
-  @@map("categories")
-}
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-model Transaction {
-  id        String     @id @default(cuid())
-  userId    String
-  categoryId String
-  type      String
-  amount    Float
-  description String?
-  date      DateTime
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  
-  @@index([userId])
-  @@index([categoryId])
-  @@index([date])
-  @@map("transactions")
-}
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model Goal {
-  id            String     @id @default(cuid())
-  userId        String
-  title         String
-  description   String?
-  targetAmount  Float
-  currentAmount Float    @default(0)
-  deadline      DateTime
-  category      String?
-  status        String     @default("active")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   @@index([userId])
-  @@index([status])
-  @@map("goals")
+  @@index([token])
 }

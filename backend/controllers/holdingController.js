@@ -1,13 +1,20 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const Holding = require('../models/Holding');
+const Portfolio = require('../models/Portfolio');
 
 const createHolding = async (req, res, next) => {
     try {
         const { portfolioId, symbol, quantity, buyPrice, currentPrice } = req.body;
         const userId = req.userId;
 
-        if (!portfolioId || !symbol || !quantity || !buyPrice || !currentPrice) {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
+        });
+        }
+
+        if (!portfolioId || !symbol || quantity === undefined || buyPrice === undefined || currentPrice === undefined) {
         return res.status(400).json({
             success: false,
             error: 'All fields are required: portfolioId, symbol, quantity, buyPrice, currentPrice'
@@ -21,9 +28,14 @@ const createHolding = async (req, res, next) => {
         });
         }
 
-        const portfolio = await prisma.portfolio.findUnique({
-        where: { id: portfolioId }
+        if (!mongoose.Types.ObjectId.isValid(portfolioId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Portfolio not found'
         });
+        }
+
+        const portfolio = await Portfolio.findById(portfolioId);
 
         if (!portfolio) {
         return res.status(404).json({
@@ -32,22 +44,20 @@ const createHolding = async (req, res, next) => {
         });
         }
 
-        if (portfolio.userId !== userId) {
+        if (portfolio.user.toString() !== userId) {
         return res.status(403).json({
             success: false,
             error: 'Not authorized to add holdings to this portfolio'
         });
         }
 
-        const holding = await prisma.holding.create({
-        data: {
-            portfolioId,
-            symbol: symbol.toUpperCase(),
-            quantity: parseFloat(quantity),
-            buyPrice: parseFloat(buyPrice),
-            currentPrice: parseFloat(currentPrice),
-            purchaseDate: new Date()
-        }
+        const holding = await Holding.create({
+        portfolio: portfolio._id,
+        symbol: symbol.toUpperCase(),
+        quantity: parseFloat(quantity),
+        buyPrice: parseFloat(buyPrice),
+        currentPrice: parseFloat(currentPrice),
+        purchaseDate: new Date()
         });
 
         res.status(201).json({
@@ -65,9 +75,21 @@ const getHoldingsByPortfolio = async (req, res, next) => {
         const { portfolioId } = req.params;
         const userId = req.userId;
 
-        const portfolio = await prisma.portfolio.findUnique({
-        where: { id: portfolioId }
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
         });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(portfolioId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Portfolio not found'
+        });
+        }
+
+        const portfolio = await Portfolio.findById(portfolioId);
 
         if (!portfolio) {
         return res.status(404).json({
@@ -76,16 +98,16 @@ const getHoldingsByPortfolio = async (req, res, next) => {
         });
         }
 
-        if (portfolio.userId !== userId) {
+        if (portfolio.user.toString() !== userId) {
         return res.status(403).json({
             success: false,
             error: 'Not authorized to view this portfolio'
         });
         }
 
-        const holdings = await prisma.holding.findMany({
-        where: { portfolioId }
-        });
+        const holdings = await Holding.find({
+        portfolio: portfolio._id
+        }).sort({ createdAt: -1 });
 
         res.json({
         success: true,
@@ -101,10 +123,21 @@ const getHoldingsByPortfolio = async (req, res, next) => {
         const { holdingId } = req.params;
         const userId = req.userId;
 
-        const holding = await prisma.holding.findUnique({
-        where: { id: holdingId },
-        include: { portfolio: true }
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
         });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(holdingId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Holding not found'
+        });
+        }
+
+        const holding = await Holding.findById(holdingId).populate('portfolio');
 
         if (!holding) {
         return res.status(404).json({
@@ -113,7 +146,7 @@ const getHoldingsByPortfolio = async (req, res, next) => {
         });
         }
 
-        if (holding.portfolio.userId !== userId) {
+        if (!holding.portfolio || holding.portfolio.user.toString() !== userId) {
         return res.status(403).json({
             success: false,
             error: 'Not authorized to view this holding'
@@ -156,10 +189,14 @@ const updateHolding = async (req, res, next) => {
         });
         }
 
-        const holding = await prisma.holding.findUnique({
-        where: { id: holdingId },
-        include: { portfolio: true }
+        if (!mongoose.Types.ObjectId.isValid(holdingId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Holding not found'
         });
+        }
+
+        const holding = await Holding.findById(holdingId).populate('portfolio');
 
         if (!holding) {
         return res.status(404).json({
@@ -168,26 +205,29 @@ const updateHolding = async (req, res, next) => {
         });
         }
 
-        if (holding.portfolio.userId !== userId) {
+        if (!holding.portfolio || holding.portfolio.user.toString() !== userId) {
         return res.status(403).json({
             success: false,
             error: 'Not authorized to update this holding'
         });
         }
 
-        const updatedHolding = await prisma.holding.update({
-        where: { id: holdingId },
-        data: {
-            ...(quantity !== undefined && { quantity: parseFloat(quantity) }),
-            ...(buyPrice !== undefined && { buyPrice: parseFloat(buyPrice) }),
-            ...(currentPrice !== undefined && { currentPrice: parseFloat(currentPrice) })
+        if (quantity !== undefined) {
+        holding.quantity = parseFloat(quantity);
         }
-        });
+        if (buyPrice !== undefined) {
+        holding.buyPrice = parseFloat(buyPrice);
+        }
+        if (currentPrice !== undefined) {
+        holding.currentPrice = parseFloat(currentPrice);
+        }
+
+        await holding.save();
 
         res.json({
         success: true,
         message: 'Holding updated successfully',
-        holding: updatedHolding
+        holding
         });
     } catch (err) {
         next(err);
@@ -199,10 +239,14 @@ const updateHolding = async (req, res, next) => {
         const { holdingId } = req.params;
         const userId = req.userId;
 
-        const holding = await prisma.holding.findUnique({
-        where: { id: holdingId },
-        include: { portfolio: true }
+        if (!mongoose.Types.ObjectId.isValid(holdingId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Holding not found'
         });
+        }
+
+        const holding = await Holding.findById(holdingId).populate('portfolio');
 
         if (!holding) {
         return res.status(404).json({
@@ -211,16 +255,14 @@ const updateHolding = async (req, res, next) => {
         });
         }
 
-        if (holding.portfolio.userId !== userId) {
+        if (!holding.portfolio || holding.portfolio.user.toString() !== userId) {
         return res.status(403).json({
             success: false,
             error: 'Not authorized to delete this holding'
         });
         }
 
-        await prisma.holding.delete({
-        where: { id: holdingId }
-        });
+        await holding.deleteOne();
 
         res.json({
         success: true,

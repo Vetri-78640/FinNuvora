@@ -1,11 +1,18 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const Category = require('../models/Category');
+const Transaction = require('../models/Transaction');
 
 const createCategory = async (req, res, next) => {
   try {
     const { name, color, icon } = req.body;
     const userId = req.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
 
     if (!name) {
       return res.status(400).json({
@@ -14,10 +21,9 @@ const createCategory = async (req, res, next) => {
       });
     }
 
-    const existingCategory = await prisma.category.findUnique({
-      where: {
-        userId_name: { userId, name }
-      }
+    const existingCategory = await Category.findOne({
+      user: new mongoose.Types.ObjectId(userId),
+      name: name.trim()
     });
 
     if (existingCategory) {
@@ -27,13 +33,11 @@ const createCategory = async (req, res, next) => {
       });
     }
 
-    const category = await prisma.category.create({
-      data: {
-        userId,
-        name,
-        color: color || '#3B82F6',
-        icon: icon || null
-      }
+    const category = await Category.create({
+      user: new mongoose.Types.ObjectId(userId),
+      name: name.trim(),
+      color: color || '#3B82F6',
+      icon: icon || null
     });
 
     res.status(201).json({
@@ -50,10 +54,18 @@ const getCategories = async (req, res, next) => {
   try {
     const userId = req.userId;
 
-    const categories = await prisma.category.findMany({
-      where: { userId },
-      orderBy: { name: 'asc' }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const categories = await Category.find({
+      user: new mongoose.Types.ObjectId(userId)
+    })
+      .sort({ name: 1 })
+      .lean();
 
     res.json({
       success: true,
@@ -70,9 +82,21 @@ const updateCategory = async (req, res, next) => {
     const { name, color, icon } = req.body;
     const userId = req.userId;
 
-    const category = await prisma.category.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    const category = await Category.findById(id);
 
     if (!category) {
       return res.status(404).json({
@@ -81,26 +105,29 @@ const updateCategory = async (req, res, next) => {
       });
     }
 
-    if (category.userId !== userId) {
+    if (category.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this category'
       });
     }
 
-    const updatedCategory = await prisma.category.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(color && { color }),
-        ...(icon !== undefined && { icon })
-      }
-    });
+    if (name) {
+      category.name = name.trim();
+    }
+    if (color) {
+      category.color = color;
+    }
+    if (icon !== undefined) {
+      category.icon = icon || null;
+    }
+
+    await category.save();
 
     res.json({
       success: true,
       message: 'Category updated successfully',
-      category: updatedCategory
+      category
     });
   } catch (err) {
     next(err);
@@ -112,10 +139,21 @@ const deleteCategory = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const category = await prisma.category.findUnique({
-      where: { id },
-      include: { transactions: true }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    const category = await Category.findById(id);
 
     if (!category) {
       return res.status(404).json({
@@ -124,23 +162,23 @@ const deleteCategory = async (req, res, next) => {
       });
     }
 
-    if (category.userId !== userId) {
+    if (category.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this category'
       });
     }
 
-    if (category.transactions.length > 0) {
+    const transactionCount = await Transaction.countDocuments({ category: category._id });
+
+    if (transactionCount > 0) {
       return res.status(400).json({
         success: false,
         error: 'Cannot delete category with existing transactions'
       });
     }
 
-    await prisma.category.delete({
-      where: { id }
-    });
+    await category.deleteOne();
 
     res.json({
       success: true,

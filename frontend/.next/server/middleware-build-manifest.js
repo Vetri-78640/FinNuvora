@@ -1,52 +1,20 @@
 globalThis.__BUILD_MANIFEST = {
   "pages": {
-    "/": [
-      "static/chunks/2d01507a1665f176.js",
-      "static/chunks/8da6d9da90390e51.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/turbopack-26f0ad1717444600.js"
-    ],
-    "/_app": [
-      "static/chunks/1e91930fbee63bd2.js",
-      "static/chunks/8da6d9da90390e51.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/ff4f1af1c117cff5.css",
-      "static/chunks/turbopack-ecc3264d5c4571e7.js"
-    ],
-    "/_error": [
-      "static/chunks/a13e7190f9809b56.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/turbopack-0475151763baa1d7.js"
-    ],
-    "/dashboard": [
-      "static/chunks/2fb3033b08f89503.js",
-      "static/chunks/8da6d9da90390e51.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/turbopack-d46be25e9ed70d45.js"
-    ],
-    "/login": [
-      "static/chunks/1b12096adb097459.js",
-      "static/chunks/8da6d9da90390e51.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/turbopack-8725a3de3b7644de.js"
-    ],
-    "/register": [
-      "static/chunks/b88353fb72946cb9.js",
-      "static/chunks/8da6d9da90390e51.js",
-      "static/chunks/13c1c0c030f04bca.js",
-      "static/chunks/45e2e7d65ce16ead.js",
-      "static/chunks/turbopack-2e40981aa6824cd1.js"
-    ]
+    "/_app": []
   },
   "devFiles": [],
-  "polyfillFiles": [],
+  "polyfillFiles": [
+    "static/chunks/a6dad97d9634a72d.js"
+  ],
   "lowPriorityFiles": [],
-  "rootMainFiles": []
+  "rootMainFiles": [
+    "static/chunks/cbd55ab9639e1e66.js",
+    "static/chunks/4386418ccdbf7a64.js",
+    "static/chunks/96dbdc0078c3e232.js",
+    "static/chunks/ff07fd46409b0e0a.js",
+    "static/chunks/1c2b85d6ff8f80f9.js",
+    "static/chunks/turbopack-12496b368ce7bea7.js"
+  ]
 };
 globalThis.__BUILD_MANIFEST.lowPriorityFiles = [
 "/static/" + process.env.__NEXT_BUILD_ID + "/_buildManifest.js",

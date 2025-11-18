@@ -1,11 +1,126 @@
-const { PrismaClient } = require('@prisma/client');
+const mongoose = require('mongoose');
+const pdfParse = require('pdf-parse');
+const Transaction = require('../models/Transaction');
+const Category = require('../models/Category');
 
-const prisma = new PrismaClient();
+/**
+ * Parse transaction text from PDF
+ * Expected format: DATE DESCRIPTION AMOUNT
+ * Example: 2024-01-15 Starbucks Coffee -25.50
+ */
+const parseTransactionFromText = (lines) => {
+  const transactions = [];
+  
+  for (const line of lines) {
+    // Skip empty lines and headers
+    if (!line.trim() || line.toLowerCase().includes('date') || line.toLowerCase().includes('description')) {
+      continue;
+    }
+
+    // Basic pattern: Date Description Amount
+    const match = line.match(/(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+([-+]?\d+\.\d{2}|[-+]?\d+)$/);
+    
+    if (match) {
+      const [_, dateStr, description, amountStr] = match;
+      
+      transactions.push({
+        date: new Date(dateStr),
+        description: description.trim(),
+        amount: Math.abs(parseFloat(amountStr)),
+        type: parseFloat(amountStr) > 0 ? 'income' : 'expense',
+        source: 'bank_statement',
+      });
+    }
+  }
+
+  return transactions;
+};
+
+/**
+ * Upload PDF and extract transactions
+ * POST /api/transactions/upload
+ */
+const uploadTransaction = async (req, res, next) => {
+  try {
+    if (!req.files || !req.files.pdf) {
+      return res.status(400).json({
+        success: false,
+        error: 'No PDF file uploaded'
+      });
+    }
+
+    const userId = req.userId;
+    
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const pdfFile = req.files.pdf;
+
+    // Parse PDF
+    const pdfData = await pdfParse(pdfFile.data);
+    const lines = pdfData.text.split('\n');
+
+    // Extract transactions
+    const parsedTransactions = parseTransactionFromText(lines);
+
+    if (parsedTransactions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No transactions found in PDF'
+      });
+    }
+
+    // Get default category (or 'Other')
+    let defaultCategory = await Category.findOne({ 
+      user: new mongoose.Types.ObjectId(userId),
+      name: 'Other' 
+    });
+    
+    if (!defaultCategory) {
+      defaultCategory = await Category.create({ 
+        user: new mongoose.Types.ObjectId(userId),
+        name: 'Other' 
+      });
+    }
+
+    // Save to MongoDB
+    const transactionsToSave = parsedTransactions.map(t => ({
+      ...t,
+      user: new mongoose.Types.ObjectId(userId),
+      category: defaultCategory._id,
+    }));
+
+    const savedTransactions = await Transaction.insertMany(transactionsToSave);
+    
+    // Populate category info
+    await Transaction.populate(savedTransactions, 'category');
+
+    res.status(201).json({
+      success: true,
+      message: `${savedTransactions.length} transactions imported successfully`,
+      transactions: savedTransactions,
+    });
+  } catch (error) {
+    console.error('Transaction upload error:', error);
+    next(error);
+  }
+};
 
 const createTransaction = async (req, res, next) => {
   try {
     const { categoryId, type, amount, description, date } = req.body;
     const userId = req.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
 
     if (!categoryId || !type || !amount || !date) {
       return res.status(400).json({
@@ -28,9 +143,14 @@ const createTransaction = async (req, res, next) => {
       });
     }
 
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId }
-    });
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    const category = await Category.findById(categoryId);
 
     if (!category) {
       return res.status(404).json({
@@ -39,29 +159,26 @@ const createTransaction = async (req, res, next) => {
       });
     }
 
-    if (category.userId !== userId) {
+    if (category.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to use this category'
       });
     }
 
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId,
-        categoryId,
-        type,
-        amount: parseFloat(amount),
-        description: description || null,
-        date: new Date(date)
-      },
-      include: { category: true }
+    const transaction = await Transaction.create({
+      user: new mongoose.Types.ObjectId(userId),
+      category: category._id,
+      type,
+      amount: parseFloat(amount),
+      description: description || null,
+      date: new Date(date)
     });
 
     res.status(201).json({
       success: true,
       message: 'Transaction created successfully',
-      transaction
+      transaction: await transaction.populate('category')
     });
   } catch (err) {
     next(err);
@@ -73,45 +190,59 @@ const getTransactions = async (req, res, next) => {
     const userId = req.userId;
     const { type, categoryId, startDate, endDate, search, sortBy, sortOrder, page = 1, limit = 10 } = req.query;
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = { userId };
+    const filters = {
+      user: new mongoose.Types.ObjectId(userId)
+    };
 
-    if (type) where.type = type;
-    if (categoryId) where.categoryId = categoryId;
+    if (type) filters.type = type;
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+      filters.category = new mongoose.Types.ObjectId(categoryId);
+    }
+
     if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
+      filters.date = {};
+      if (startDate) filters.date.$gte = new Date(startDate);
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        where.date.lte = end;
+        filters.date.$lte = end;
       }
     }
+
     if (search) {
-      where.OR = [
-        { description: { contains: search } }
+      filters.$or = [
+        { description: { $regex: search, $options: 'i' } }
       ];
     }
 
-    const orderBy = {};
+    const sort = {};
     if (sortBy && ['date', 'amount', 'createdAt'].includes(sortBy)) {
-      orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
     } else {
-      orderBy.date = 'desc';
+      sort.date = -1;
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: { category: true },
-      orderBy,
-      skip,
-      take: limitNum
-    });
+    const query = Transaction.find(filters)
+      .populate('category')
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum);
 
-    const total = await prisma.transaction.count({ where });
+    const [transactions, total] = await Promise.all([
+      query,
+      Transaction.countDocuments(filters)
+    ]);
 
     res.json({
       success: true,
@@ -134,9 +265,21 @@ const updateTransaction = async (req, res, next) => {
     const { categoryId, type, amount, description, date } = req.body;
     const userId = req.userId;
 
-    const transaction = await prisma.transaction.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transaction not found'
+      });
+    }
+
+    const transaction = await Transaction.findById(id);
 
     if (!transaction) {
       return res.status(404).json({
@@ -145,7 +288,7 @@ const updateTransaction = async (req, res, next) => {
       });
     }
 
-    if (transaction.userId !== userId) {
+    if (transaction.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this transaction'
@@ -153,11 +296,16 @@ const updateTransaction = async (req, res, next) => {
     }
 
     if (categoryId) {
-      const category = await prisma.category.findUnique({
-        where: { id: categoryId }
-      });
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res.status(403).json({
+          success: false,
+          error: 'Invalid category'
+        });
+      }
 
-      if (!category || category.userId !== userId) {
+      const category = await Category.findById(categoryId);
+
+      if (!category || category.user.toString() !== userId) {
         return res.status(403).json({
           success: false,
           error: 'Invalid category'
@@ -179,22 +327,28 @@ const updateTransaction = async (req, res, next) => {
       });
     }
 
-    const updatedTransaction = await prisma.transaction.update({
-      where: { id },
-      data: {
-        ...(categoryId && { categoryId }),
-        ...(type && { type }),
-        ...(amount && { amount: parseFloat(amount) }),
-        ...(description !== undefined && { description }),
-        ...(date && { date: new Date(date) })
-      },
-      include: { category: true }
-    });
+    if (categoryId) {
+      transaction.category = new mongoose.Types.ObjectId(categoryId);
+    }
+    if (type) {
+      transaction.type = type;
+    }
+    if (amount !== undefined) {
+      transaction.amount = parseFloat(amount);
+    }
+    if (description !== undefined) {
+      transaction.description = description || null;
+    }
+    if (date) {
+      transaction.date = new Date(date);
+    }
+
+    await transaction.save();
 
     res.json({
       success: true,
       message: 'Transaction updated successfully',
-      transaction: updatedTransaction
+      transaction: await transaction.populate('category')
     });
   } catch (err) {
     next(err);
@@ -206,9 +360,21 @@ const deleteTransaction = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const transaction = await prisma.transaction.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transaction not found'
+      });
+    }
+
+    const transaction = await Transaction.findById(id);
 
     if (!transaction) {
       return res.status(404).json({
@@ -217,16 +383,14 @@ const deleteTransaction = async (req, res, next) => {
       });
     }
 
-    if (transaction.userId !== userId) {
+    if (transaction.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this transaction'
       });
     }
 
-    await prisma.transaction.delete({
-      where: { id }
-    });
+    await transaction.deleteOne();
 
     res.json({
       success: true,
@@ -242,22 +406,28 @@ const getTransactionStats = async (req, res, next) => {
     const userId = req.userId;
     const { startDate, endDate } = req.query;
 
-    const where = { userId };
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    const filters = {
+      user: new mongoose.Types.ObjectId(userId)
+    };
 
     if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
+      filters.date = {};
+      if (startDate) filters.date.$gte = new Date(startDate);
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        where.date.lte = end;
+        filters.date.$lte = end;
       }
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: { category: true }
-    });
+    const transactions = await Transaction.find(filters).populate('category');
 
     const stats = {
       totalIncome: 0,
@@ -289,6 +459,7 @@ const getTransactionStats = async (req, res, next) => {
 };
 
 module.exports = {
+  uploadTransaction,
   createTransaction,
   getTransactions,
   updateTransaction,

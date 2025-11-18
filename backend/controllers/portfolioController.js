@@ -1,11 +1,18 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const Portfolio = require('../models/Portfolio');
+const Holding = require('../models/Holding');
 
 const createPortfolio = async (req, res, next) => {
   try {
     const { name, description } = req.body;
     const userId = req.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.',
+      });
+    }
 
     if (!name) {
       return res.status(400).json({
@@ -14,12 +21,10 @@ const createPortfolio = async (req, res, next) => {
       });
     }
 
-    const portfolio = await prisma.portfolio.create({
-      data: {
-        userId,
-        name,
-        description: description || null
-      }
+    const portfolio = await Portfolio.create({
+      user: new mongoose.Types.ObjectId(userId),
+      name,
+      description: description || null
     });
 
     res.status(201).json({
@@ -37,12 +42,18 @@ const getPortfolios = async (req, res, next) => {
   try {
     const userId = req.userId;
 
-    const portfolios = await prisma.portfolio.findMany({
-      where: { userId },
-      include: {
-        holdings: true // Include holdings in response
-      }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.',
+      });
+    }
+
+    const portfolios = await Portfolio.find({
+      user: new mongoose.Types.ObjectId(userId)
+    })
+      .populate('holdings')
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -59,10 +70,14 @@ const getPortfolioById = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const portfolio = await prisma.portfolio.findUnique({
-      where: { id },
-      include: { holdings: true }
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Portfolio not found'
+      });
+    }
+
+    const portfolio = await Portfolio.findById(id).populate('holdings');
 
     if (!portfolio) {
       return res.status(404).json({
@@ -71,7 +86,7 @@ const getPortfolioById = async (req, res, next) => {
       });
     }
 
-    if (portfolio.userId !== userId) {
+    if (portfolio.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to view this portfolio'
@@ -94,9 +109,14 @@ const updatePortfolio = async (req, res, next) => {
     const { name, description } = req.body;
     const userId = req.userId;
 
-    const portfolio = await prisma.portfolio.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Portfolio not found'
+      });
+    }
+
+    const portfolio = await Portfolio.findById(id);
 
     if (!portfolio) {
       return res.status(404).json({
@@ -105,25 +125,26 @@ const updatePortfolio = async (req, res, next) => {
       });
     }
 
-    if (portfolio.userId !== userId) {
+    if (portfolio.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this portfolio'
       });
     }
 
-    const updatedPortfolio = await prisma.portfolio.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(description !== undefined && { description })
-      }
-    });
+    if (name) {
+      portfolio.name = name;
+    }
+    if (description !== undefined) {
+      portfolio.description = description || null;
+    }
+
+    await portfolio.save();
 
     res.json({
       success: true,
       message: 'Portfolio updated successfully',
-      portfolio: updatedPortfolio
+      portfolio
     });
   } catch (err) {
     next(err);
@@ -136,9 +157,14 @@ const deletePortfolio = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const portfolio = await prisma.portfolio.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Portfolio not found'
+      });
+    }
+
+    const portfolio = await Portfolio.findById(id);
 
     if (!portfolio) {
       return res.status(404).json({
@@ -147,16 +173,15 @@ const deletePortfolio = async (req, res, next) => {
       });
     }
 
-    if (portfolio.userId !== userId) {
+    if (portfolio.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this portfolio'
       });
     }
 
-    await prisma.portfolio.delete({
-      where: { id }
-    });
+    await Holding.deleteMany({ portfolio: portfolio._id });
+    await portfolio.deleteOne();
 
     res.json({
       success: true,

@@ -28,22 +28,64 @@
       "namedRegex": "^/(?:/)?$"
     },
     {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/auth/login",
+      "regex": "^/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/login(?:/)?$"
+    },
+    {
+      "page": "/auth/register",
+      "regex": "^/auth/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/register(?:/)?$"
+    },
+    {
       "page": "/dashboard",
       "regex": "^/dashboard(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard(?:/)?$"
     },
     {
-      "page": "/login",
-      "regex": "^/login(?:/)?$",
+      "page": "/dashboard/goals",
+      "regex": "^/dashboard/goals(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/login(?:/)?$"
+      "namedRegex": "^/dashboard/goals(?:/)?$"
     },
     {
-      "page": "/register",
-      "regex": "^/register(?:/)?$",
+      "page": "/dashboard/insights",
+      "regex": "^/dashboard/insights(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/register(?:/)?$"
+      "namedRegex": "^/dashboard/insights(?:/)?$"
+    },
+    {
+      "page": "/dashboard/portfolios",
+      "regex": "^/dashboard/portfolios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/portfolios(?:/)?$"
+    },
+    {
+      "page": "/dashboard/profile",
+      "regex": "^/dashboard/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/profile(?:/)?$"
+    },
+    {
+      "page": "/dashboard/transactions",
+      "regex": "^/dashboard/transactions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/transactions(?:/)?$"
     }
   ],
   "dataRoutes": [],

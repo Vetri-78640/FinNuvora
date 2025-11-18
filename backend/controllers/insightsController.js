@@ -1,7 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const Transaction = require('../models/Transaction');
+const User = require('../models/User');
+const PriceHistory = require('../models/PriceHistory');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -10,6 +11,13 @@ const generateInsights = async (req, res, next) => {
     const userId = req.userId;
     const { startDate, endDate } = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       return res.status(400).json({
         success: false,
@@ -17,26 +25,24 @@ const generateInsights = async (req, res, next) => {
       });
     }
 
-    const where = { userId };
+    const filters = {
+      user: new mongoose.Types.ObjectId(userId)
+    };
 
     if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
+      filters.date = {};
+      if (startDate) filters.date.$gte = new Date(startDate);
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        where.date.lte = end;
+        filters.date.$lte = end;
       }
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: { category: true }
-    });
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const [transactions, user] = await Promise.all([
+      Transaction.find(filters).populate('category'),
+      User.findById(userId)
+    ]);
 
     const stats = {
       totalIncome: 0,
@@ -51,10 +57,12 @@ const generateInsights = async (req, res, next) => {
       if (t.type === 'expense') stats.totalExpense += t.amount;
       if (t.type === 'investment') stats.totalInvestment += t.amount;
 
-      if (!stats.byCategory[t.category.name]) {
-        stats.byCategory[t.category.name] = { income: 0, expense: 0, investment: 0 };
+      const categoryName = t.category?.name || 'Uncategorized';
+
+      if (!stats.byCategory[categoryName]) {
+        stats.byCategory[categoryName] = { income: 0, expense: 0, investment: 0 };
       }
-      stats.byCategory[t.category.name][t.type] += t.amount;
+      stats.byCategory[categoryName][t.type] += t.amount;
     });
 
     stats.netAmount = stats.totalIncome - stats.totalExpense;
@@ -87,15 +95,49 @@ Please provide:
 Keep the response concise, friendly, and specific to their financial data.
     `;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    const result = await model.generateContent(prompt);
-    const insights = result.response.text();
+    try {
+      // Use gemini-2.0-flash which is available
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const result = await model.generateContent(prompt);
+      const insights = result.response.text();
 
-    res.json({
-      success: true,
-      insights,
-      stats
-    });
+      res.json({
+        success: true,
+        insights,
+        stats
+      });
+    } catch (geminiErr) {
+      // If Gemini fails, return stats with a fallback message
+      const fallbackInsight = `
+Financial Overview for ${user.name}:
+
+Your financial health shows:
+- Total Income: $${stats.totalIncome.toFixed(2)}
+- Total Expenses: $${stats.totalExpense.toFixed(2)}
+- Savings Rate: ${stats.savingsRate}%
+
+Top Spending Categories:
+${Object.entries(stats.byCategory)
+  .sort((a, b) => b[1].expense - a[1].expense)
+  .slice(0, 3)
+  .map(([cat, amounts]) => `- ${cat}: $${amounts.expense.toFixed(2)}`)
+  .join('\n')}
+
+Key Recommendations:
+1. Review your top spending categories for optimization opportunities
+2. Maintain your savings rate by tracking monthly expenses
+3. Consider setting up automatic transfers to savings
+
+Note: AI insights are temporarily unavailable. Please check your API configuration.
+      `;
+
+      res.json({
+        success: true,
+        insights: fallbackInsight,
+        stats,
+        warning: 'Using fallback insights - Gemini API issue'
+      });
+    }
   } catch (err) {
     next(err);
   }
@@ -105,7 +147,15 @@ const getInsightHistory = async (req, res, next) => {
   try {
     const userId = req.userId;
 
-    const history = await prisma.priceHistory.find({ userId }).limit(10).sort({ _id: -1 });
+    const query = {};
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      query.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    const history = await PriceHistory.find(query)
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .lean();
 
     res.json({
       success: true,

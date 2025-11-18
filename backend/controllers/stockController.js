@@ -1,7 +1,4 @@
 const axios = require('axios');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
 
 const ALPHA_VANTAGE_API = 'https://www.alphavantage.co/query';
 const API_KEY = process.env.ALPHA_VANTAGE_API_KEY || 'demo';

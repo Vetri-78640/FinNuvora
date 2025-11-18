@@ -1,22 +1,19 @@
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const User = require('../models/User');
 
 const getProfile = async (req, res, next) => {
   try {
     const userId = req.userId;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const user = await User.findById(userId).lean();
 
     if (!user) {
       return res.status(404).json({
@@ -47,11 +44,10 @@ const updateProfile = async (req, res, next) => {
     }
 
     if (email) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
+      const normalizedEmail = email.toLowerCase();
+      const existingUser = await User.findOne({ email: normalizedEmail });
 
-      if (existingUser && existingUser.id !== userId) {
+      if (existingUser && existingUser._id.toString() !== userId) {
         return res.status(409).json({
           success: false,
           error: 'Email already in use'
@@ -59,20 +55,26 @@ const updateProfile = async (req, res, next) => {
       }
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(name && { name }),
-        ...(email && { email })
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true
+    const updateData = {};
+
+    if (name) {
+      updateData.name = name;
+    }
+    if (email) {
+      updateData.email = email.toLowerCase();
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+        projection: {
+          password: 0
+        }
       }
-    });
+    );
 
     res.json({
       success: true,
@@ -103,9 +105,7 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -132,12 +132,8 @@ const changePassword = async (req, res, next) => {
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        password: hashedNewPassword
-      }
-    });
+    user.password = hashedNewPassword;
+    await user.save();
 
     res.json({
       success: true,

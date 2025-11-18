@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 
 const userPreferencesSchema = new mongoose.Schema({
-    userId: {
-        type: String,
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true,
-        unique: true
+        unique: true,
+        sparse: true
     },
     theme: {
         type: String,
@@ -28,17 +30,9 @@ const userPreferencesSchema = new mongoose.Schema({
     language: {
         type: String,
         default: 'en'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
-
-userPreferencesSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('UserPreferences', userPreferencesSchema);

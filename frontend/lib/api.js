@@ -1,21 +1,44 @@
 import axios from 'axios';
+import { getCookie } from './cookies';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL 
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Request interceptor to add token to all requests
+api.interceptors.request.use(
+  (config) => {
+    const token = getCookie('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Don't redirect on auth endpoints (login/register)
+    const isAuthEndpoint = error.config?.url?.includes('/auth/');
+    
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Clear cookies and redirect to login only for protected routes
+      if (typeof window !== 'undefined') {
+        document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        window.location.href = '/auth/login';
+      }
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
 
 export const authAPI = {
   register: (email, password, name) =>
@@ -44,7 +67,10 @@ export const transactionAPI = {
   createTransaction: (data) => api.post('/transactions', data),
   updateTransaction: (id, data) => api.put(`/transactions/${id}`, data),
   deleteTransaction: (id) => api.delete(`/transactions/${id}`),
-  getStats: (params) => api.get('/transactions/stats/summary', { params })
+  getStats: (params) => api.get('/transactions/stats/summary', { params }),
+  uploadPDF: (formData) => api.post('/transactions/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 };
 
 export const goalAPI = {
@@ -60,6 +86,12 @@ export const insightsAPI = {
   generateInsights: (startDate, endDate) =>
     api.post('/insights/generate', { startDate, endDate }),
   getHistory: () => api.get('/insights/history')
+};
+
+export const preferencesAPI = {
+  getPreferences: () => api.get('/preferences'),
+  updatePreferences: (data) => api.put('/preferences', data),
+  resetPreferences: () => api.delete('/preferences')
 };
 
 export const stockAPI = {

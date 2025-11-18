@@ -1,14 +1,23 @@
+const mongoose = require('mongoose');
 const UserPreferences = require('../models/UserPreferences');
 
 const getPreferences = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        let preferences = await UserPreferences.findOne({ userId });
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
+        });
+        }
+
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+        let preferences = await UserPreferences.findOne({ user: userObjectId });
 
         if (!preferences) {
-        preferences = new UserPreferences({ userId });
-        await preferences.save();
+            preferences = new UserPreferences({ user: userObjectId });
+            await preferences.save();
         }
 
         res.json({
@@ -25,24 +34,29 @@ const updatePreferences = async (req, res, next) => {
         const userId = req.userId;
         const { theme, notifications, currency, language } = req.body;
 
-        let preferences = await UserPreferences.findOne({ userId });
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
+        });
+        }
+
+        const updateData = {};
+        if (theme) updateData.theme = theme;
+        if (notifications) updateData.notifications = notifications;
+        if (currency) updateData.currency = currency;
+        if (language) updateData.language = language;
+
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+        let preferences = await UserPreferences.findOne({ user: userObjectId });
 
         if (!preferences) {
-        preferences = new UserPreferences({ userId });
+            preferences = new UserPreferences({ user: userObjectId, ...updateData });
+            await preferences.save();
+        } else {
+            Object.assign(preferences, updateData);
+            await preferences.save();
         }
-
-        if (theme) preferences.theme = theme;
-        if (notifications) {
-        preferences.notifications = {
-            ...preferences.notifications,
-            ...notifications
-        };
-        }
-        if (currency) preferences.currency = currency;
-        if (language) preferences.language = language;
-
-        preferences.updatedAt = new Date();
-        await preferences.save();
 
         res.json({
         success: true,
@@ -58,9 +72,16 @@ const resetPreferences = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        await UserPreferences.deleteOne({ userId });
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired session. Please login again.'
+        });
+        }
 
-        const newPreferences = new UserPreferences({ userId });
+        await UserPreferences.deleteOne({ user: new mongoose.Types.ObjectId(userId) });
+
+        const newPreferences = new UserPreferences({ user: new mongoose.Types.ObjectId(userId) });
         await newPreferences.save();
 
         res.json({

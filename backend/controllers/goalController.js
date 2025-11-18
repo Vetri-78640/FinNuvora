@@ -1,11 +1,17 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const mongoose = require('mongoose');
+const Goal = require('../models/Goal');
 
 const createGoal = async (req, res, next) => {
   try {
     const { title, description, targetAmount, deadline, category } = req.body;
     const userId = req.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
 
     if (!title || !targetAmount || !deadline) {
       return res.status(400).json({
@@ -29,22 +35,24 @@ const createGoal = async (req, res, next) => {
       });
     }
 
-    const goal = await prisma.goal.create({
-      data: {
-        userId,
-        title,
-        description: description || null,
-        targetAmount: parseFloat(targetAmount),
-        deadline: deadlineDate,
-        category: category || null,
-        status: 'active'
-      }
+    const goal = await Goal.create({
+      user: new mongoose.Types.ObjectId(userId),
+      title,
+      description: description || null,
+      targetAmount: parseFloat(targetAmount),
+      deadline: deadlineDate,
+      category: category || null,
+      status: 'active'
     });
 
     res.status(201).json({
       success: true,
       message: 'Goal created successfully',
-      goal
+      goal: {
+        ...goal.toObject(),
+        progress: Math.round((goal.currentAmount / goal.targetAmount) * 100),
+        daysRemaining: Math.ceil((goal.deadline - new Date()) / (1000 * 60 * 60 * 24))
+      }
     });
   } catch (err) {
     next(err);
@@ -56,16 +64,25 @@ const getGoals = async (req, res, next) => {
     const userId = req.userId;
     const { status } = req.query;
 
-    const where = { userId };
-    if (status) where.status = status;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
 
-    const goals = await prisma.goal.findMany({
-      where,
-      orderBy: { deadline: 'asc' }
-    });
+    const filters = {
+      user: new mongoose.Types.ObjectId(userId)
+    };
+
+    if (status) {
+      filters.status = status;
+    }
+
+    const goals = await Goal.find(filters).sort({ deadline: 1 });
 
     const goalsWithProgress = goals.map(goal => ({
-      ...goal,
+      ...goal.toObject(),
       progress: Math.round((goal.currentAmount / goal.targetAmount) * 100),
       daysRemaining: Math.ceil((goal.deadline - new Date()) / (1000 * 60 * 60 * 24))
     }));
@@ -85,6 +102,13 @@ const updateGoalProgress = async (req, res, next) => {
     const { amount } = req.body;
     const userId = req.userId;
 
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
     if (amount === undefined || amount <= 0) {
       return res.status(400).json({
         success: false,
@@ -92,9 +116,14 @@ const updateGoalProgress = async (req, res, next) => {
       });
     }
 
-    const goal = await prisma.goal.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Goal not found'
+      });
+    }
+
+    const goal = await Goal.findById(id);
 
     if (!goal) {
       return res.status(404).json({
@@ -103,31 +132,24 @@ const updateGoalProgress = async (req, res, next) => {
       });
     }
 
-    if (goal.userId !== userId) {
+    if (goal.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this goal'
       });
     }
 
-    const newAmount = goal.currentAmount + parseFloat(amount);
-    const status = newAmount >= goal.targetAmount ? 'completed' : 'active';
+    goal.currentAmount += parseFloat(amount);
+    goal.status = goal.currentAmount >= goal.targetAmount ? 'completed' : 'active';
+    await goal.save();
 
-    const updatedGoal = await prisma.goal.update({
-      where: { id },
-      data: {
-        currentAmount: newAmount,
-        status
-      }
-    });
-
-    const progress = Math.round((updatedGoal.currentAmount / updatedGoal.targetAmount) * 100);
+    const progress = Math.round((goal.currentAmount / goal.targetAmount) * 100);
 
     res.json({
       success: true,
       message: 'Goal progress updated successfully',
       goal: {
-        ...updatedGoal,
+        ...goal.toObject(),
         progress
       }
     });
@@ -142,9 +164,21 @@ const updateGoal = async (req, res, next) => {
     const { title, description, targetAmount, deadline, category, status } = req.body;
     const userId = req.userId;
 
-    const goal = await prisma.goal.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Goal not found'
+      });
+    }
+
+    const goal = await Goal.findById(id);
 
     if (!goal) {
       return res.status(404).json({
@@ -153,7 +187,7 @@ const updateGoal = async (req, res, next) => {
       });
     }
 
-    if (goal.userId !== userId) {
+    if (goal.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this goal'
@@ -184,25 +218,34 @@ const updateGoal = async (req, res, next) => {
       });
     }
 
-    const updatedGoal = await prisma.goal.update({
-      where: { id },
-      data: {
-        ...(title && { title }),
-        ...(description !== undefined && { description }),
-        ...(targetAmount && { targetAmount: parseFloat(targetAmount) }),
-        ...(deadline && { deadline: new Date(deadline) }),
-        ...(category !== undefined && { category }),
-        ...(status && { status })
-      }
-    });
+    if (title) {
+      goal.title = title;
+    }
+    if (description !== undefined) {
+      goal.description = description || null;
+    }
+    if (targetAmount) {
+      goal.targetAmount = parseFloat(targetAmount);
+    }
+    if (deadline) {
+      goal.deadline = new Date(deadline);
+    }
+    if (category !== undefined) {
+      goal.category = category || null;
+    }
+    if (status) {
+      goal.status = status;
+    }
 
-    const progress = Math.round((updatedGoal.currentAmount / updatedGoal.targetAmount) * 100);
+    await goal.save();
+
+    const progress = Math.round((goal.currentAmount / goal.targetAmount) * 100);
 
     res.json({
       success: true,
       message: 'Goal updated successfully',
       goal: {
-        ...updatedGoal,
+        ...goal.toObject(),
         progress
       }
     });
@@ -216,9 +259,21 @@ const deleteGoal = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const goal = await prisma.goal.findUnique({
-      where: { id }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Goal not found'
+      });
+    }
+
+    const goal = await Goal.findById(id);
 
     if (!goal) {
       return res.status(404).json({
@@ -227,16 +282,14 @@ const deleteGoal = async (req, res, next) => {
       });
     }
 
-    if (goal.userId !== userId) {
+    if (goal.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this goal'
       });
     }
 
-    await prisma.goal.delete({
-      where: { id }
-    });
+    await goal.deleteOne();
 
     res.json({
       success: true,
