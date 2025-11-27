@@ -12,10 +12,10 @@ const PriceHistory = require('./models/PriceHistory');
 
 const seed = async () => {
   try {
-    console.log('🔄 Connecting to MongoDB...');
+    console.log('Connecting to MongoDB...');
     await connectMongoDB();
 
-    console.log('🧹 Clearing existing data...');
+    console.log('Clearing existing data...');
     await Promise.all([
       Holding.deleteMany({}),
       Portfolio.deleteMany({}),
@@ -26,7 +26,7 @@ const seed = async () => {
       User.deleteMany({}),
     ]);
 
-    console.log('👥 Creating users...');
+    console.log('Creating users...');
     const [john, jane] = await Promise.all([
       User.create({
         name: 'John Doe',
@@ -40,7 +40,7 @@ const seed = async () => {
       }),
     ]);
 
-    console.log('📁 Creating portfolios...');
+    console.log('Creating portfolios...');
     const [tech, blueChip, growth] = await Promise.all([
       Portfolio.create({
         user: john._id,
@@ -59,7 +59,7 @@ const seed = async () => {
       }),
     ]);
 
-    console.log('💹 Creating holdings...');
+    console.log('Creating holdings...');
     await Holding.insertMany([
       {
         portfolio: tech._id,
@@ -119,7 +119,7 @@ const seed = async () => {
       },
     ]);
 
-    console.log('🏷️ Creating categories...');
+    console.log('Creating categories...');
     const [salary, rent, groceries, investing, janeSalary, janeUtilities, janeEntertainment] = await Category.insertMany([
       { user: john._id, name: 'Salary', color: '#4ade80' },
       { user: john._id, name: 'Rent', color: '#f87171' },
@@ -130,7 +130,7 @@ const seed = async () => {
       { user: jane._id, name: 'Entertainment', color: '#a78bfa' },
     ]);
 
-    console.log('💰 Creating transactions...');
+    console.log('Creating transactions...');
     await Transaction.insertMany([
       {
         user: john._id,
@@ -190,7 +190,7 @@ const seed = async () => {
       },
     ]);
 
-    console.log('🎯 Creating goals...');
+    console.log('Creating goals...');
     await Goal.insertMany([
       {
         user: john._id,
@@ -230,7 +230,7 @@ const seed = async () => {
       },
     ]);
 
-    console.log('📈 Creating sample price history...');
+    console.log('Creating sample price history...');
     await PriceHistory.insertMany([
       {
         user: john._id,
@@ -255,9 +255,9 @@ const seed = async () => {
       },
     ]);
 
-    console.log('✅ Database seeded successfully!');
+    console.log('Database seeded successfully!');
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    console.error('Error seeding database:', error);
   } finally {
     await mongoose.connection.close();
     process.exit(0);

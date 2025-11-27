@@ -1,8 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { portfolioAPI, holdingAPI } from '@/lib/api';
+import { portfolioAPI, holdingAPI, stockAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import SmartAddInput from '@/components/SmartAddInput';
+import PortfolioChart from '@/components/PortfolioChart';
+import { RefreshCw, Briefcase, PieChart, DollarSign, Plus, Trash2, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+import Button from '@/components/ui/Button';
+
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
 
 const emptyPortfolioForm = {
   name: '',
@@ -16,15 +23,9 @@ const createEmptyHoldingForm = () => ({
   currentPrice: '',
 });
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
-
 export default function PortfoliosPage() {
   useProtectedRoute();
+  const { formatCurrency } = useCurrency();
 
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,8 @@ export default function PortfoliosPage() {
   const [savingPortfolioId, setSavingPortfolioId] = useState(null);
   const [holdingForms, setHoldingForms] = useState({});
   const [expandedPortfolioIds, setExpandedPortfolioIds] = useState(new Set());
+  const [livePrices, setLivePrices] = useState({});
+  const [refreshingPrices, setRefreshingPrices] = useState(false);
 
   const loadPortfolios = useCallback(async () => {
     try {
@@ -51,6 +54,43 @@ export default function PortfoliosPage() {
   useEffect(() => {
     loadPortfolios();
   }, [loadPortfolios]);
+
+  // Fetch live prices for all holdings
+  const fetchLivePrices = useCallback(async () => {
+    if (portfolios.length === 0) return;
+
+    const symbols = new Set();
+    portfolios.forEach(p => {
+      (p.holdings || []).forEach(h => {
+        if (h.symbol) symbols.add(h.symbol);
+      });
+    });
+
+    if (symbols.size === 0) return;
+
+    try {
+      setRefreshingPrices(true);
+      const { data } = await stockAPI.getBatch(Array.from(symbols));
+
+      const priceMap = {};
+      data.data.forEach(item => {
+        priceMap[item.symbol] = item.price;
+      });
+
+      setLivePrices(prev => ({ ...prev, ...priceMap }));
+    } catch (err) {
+      console.error('Failed to fetch live prices:', err);
+    } finally {
+      setRefreshingPrices(false);
+    }
+  }, [portfolios]);
+
+  // Initial price fetch when portfolios load
+  useEffect(() => {
+    if (portfolios.length > 0) {
+      fetchLivePrices();
+    }
+  }, [portfolios.length]); // Only run when portfolio count changes (initial load)
 
   const resetForm = () => {
     setForm(emptyPortfolioForm);
@@ -113,9 +153,9 @@ export default function PortfoliosPage() {
         prev[portfolioId]
           ? prev
           : {
-              ...prev,
-              [portfolioId]: createEmptyHoldingForm(),
-            }
+            ...prev,
+            [portfolioId]: createEmptyHoldingForm(),
+          }
       );
     },
     [setHoldingForms]
@@ -137,10 +177,13 @@ export default function PortfoliosPage() {
 
   const handleAddHolding = async (portfolioId) => {
     const formData = holdingForms[portfolioId] || createEmptyHoldingForm();
-    const { symbol, quantity, buyPrice, currentPrice } = formData;
+    const { symbol, quantity, buyPrice } = formData;
 
-    if (!symbol || !quantity || !buyPrice || !currentPrice) {
-      setError('All holding fields are required');
+    // If current price is not provided, use buy price or live price if available
+    const currentPrice = formData.currentPrice || livePrices[symbol] || buyPrice;
+
+    if (!symbol || !quantity || !buyPrice) {
+      setError('Symbol, quantity, and buy price are required');
       return;
     }
 
@@ -159,9 +202,9 @@ export default function PortfoliosPage() {
         prev.map((portfolio) =>
           portfolio._id === portfolioId
             ? {
-                ...portfolio,
-                holdings: [data.holding, ...(portfolio.holdings || [])],
-              }
+              ...portfolio,
+              holdings: [data.holding, ...(portfolio.holdings || [])],
+            }
             : portfolio
         )
       );
@@ -170,10 +213,37 @@ export default function PortfoliosPage() {
         ...prev,
         [portfolioId]: createEmptyHoldingForm(),
       }));
+
+      // Refresh prices to get the latest for the new holding
+      fetchLivePrices();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add holding');
     } finally {
       setSavingPortfolioId(null);
+    }
+  };
+
+  const handleSmartAdd = async (text, portfolioId) => {
+    try {
+      setError('');
+      const { data } = await holdingAPI.smartAdd(text, portfolioId);
+
+      setPortfolios((prev) =>
+        prev.map((portfolio) =>
+          portfolio._id === portfolioId
+            ? {
+              ...portfolio,
+              holdings: [data.holding, ...(portfolio.holdings || [])],
+            }
+            : portfolio
+        )
+      );
+
+      // Refresh prices
+      fetchLivePrices();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to add holding via AI');
+      throw err; // Re-throw for the component to handle state
     }
   };
 
@@ -189,11 +259,11 @@ export default function PortfoliosPage() {
         prev.map((portfolio) =>
           portfolio._id === portfolioId
             ? {
-                ...portfolio,
-                holdings: (portfolio.holdings || []).filter(
-                  (holding) => holding._id !== holdingId
-                ),
-              }
+              ...portfolio,
+              holdings: (portfolio.holdings || []).filter(
+                (holding) => holding._id !== holdingId
+              ),
+            }
             : portfolio
         )
       );
@@ -204,276 +274,374 @@ export default function PortfoliosPage() {
     }
   };
 
+  // Enrich portfolios with live prices for charts
+  const enrichedPortfolios = useMemo(() => {
+    return portfolios.map(p => ({
+      ...p,
+      holdings: (p.holdings || []).map(h => ({
+        ...h,
+        currentPrice: livePrices[h.symbol] || h.currentPrice || h.buyPrice
+      }))
+    }));
+  }, [portfolios, livePrices]);
+
   const portfolioStats = useMemo(() => {
-    if (!portfolios.length) {
+    if (!enrichedPortfolios.length) {
       return {
         totalPortfolios: 0,
         totalHoldings: 0,
+        totalValue: 0,
       };
     }
 
-    const totalHoldings = portfolios.reduce(
-      (count, portfolio) => count + (portfolio.holdings?.length || 0),
-      0
-    );
+    let totalHoldings = 0;
+    let totalValue = 0;
+
+    enrichedPortfolios.forEach(portfolio => {
+      const holdings = portfolio.holdings || [];
+      totalHoldings += holdings.length;
+      holdings.forEach(h => {
+        totalValue += h.quantity * (h.currentPrice || 0);
+      });
+    });
 
     return {
-      totalPortfolios: portfolios.length,
+      totalPortfolios: enrichedPortfolios.length,
       totalHoldings,
+      totalValue
     };
-  }, [portfolios]);
+  }, [enrichedPortfolios]);
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl font-bold text-text-primary tracking-tight">
             Portfolios
           </h2>
-          <p className="text-slate-400 mt-2">
-            Create and track your investment portfolios and holdings.
+          <p className="text-text-secondary mt-1">
+            Track your investments with real-time updates
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="card px-5 py-4 text-center">
-            <p className="text-slate-400 text-sm">Total Portfolios</p>
-            <p className="text-2xl font-bold text-white">
-              {portfolioStats.totalPortfolios}
-            </p>
-          </div>
-          <div className="card px-5 py-4 text-center">
-            <p className="text-slate-400 text-sm">Total Holdings</p>
-            <p className="text-2xl font-bold text-white">
-              {portfolioStats.totalHoldings}
-            </p>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={fetchLivePrices}
+            disabled={refreshingPrices}
+            className="text-primary hover:text-primary-light"
+          >
+            <RefreshCw size={16} className={`mr-2 ${refreshingPrices ? "animate-spin" : ""}`} />
+            {refreshingPrices ? 'Updating...' : 'Refresh Prices'}
+          </Button>
         </div>
       </div>
 
-      <div className="card">
-        <h3 className="text-xl font-semibold text-white mb-4">
-          Create new portfolio
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          icon={DollarSign}
+          title="Total Value"
+          subtitle={formatCurrency(portfolioStats.totalValue)}
+          color="green"
+        />
+        <StatCard
+          icon={Briefcase}
+          title="Portfolios"
+          subtitle={`${portfolioStats.totalPortfolios} Active`}
+          color="blue"
+        />
+        <StatCard
+          icon={PieChart}
+          title="Total Holdings"
+          subtitle={`${portfolioStats.totalHoldings} Assets`}
+          color="purple"
+        />
+      </div>
+
+      {/* Charts Section */}
+      {portfolioStats.totalHoldings > 0 && (
+        <PortfolioChart portfolios={enrichedPortfolios} />
+      )}
+
+      {/* Create Portfolio Form */}
+      <div className="card p-6">
+        <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
+          <Plus size={20} className="text-primary" /> Create New Portfolio
         </h3>
         <form
           onSubmit={handleCreatePortfolio}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          className="grid grid-cols-1 md:grid-cols-12 gap-4"
         >
-          <input
-            className="input-field"
-            placeholder="Portfolio name"
-            value={form.name}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, name: event.target.value }))
-            }
-            required
-          />
-          <input
-            className="input-field md:col-span-2"
-            placeholder="Description (optional)"
-            value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
-          />
-          <button
-            type="submit"
-            className="btn-primary md:col-span-3"
-            disabled={creating}
-          >
-            {creating ? 'Creating...' : 'Create Portfolio'}
-          </button>
+          <div className="md:col-span-4">
+            <input
+              className="input-field w-full"
+              placeholder="Portfolio Name"
+              value={form.name}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, name: event.target.value }))
+              }
+              required
+            />
+          </div>
+          <div className="md:col-span-6">
+            <input
+              className="input-field w-full"
+              placeholder="Description (optional)"
+              value={form.description}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={creating}
+              disabled={creating}
+            >
+              Create
+            </Button>
+          </div>
         </form>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 px-4 py-3">
+        <div className="p-4 rounded-full bg-error/10 border border-error/20 text-error text-sm">
           {error}
         </div>
       )}
 
+      {/* Portfolios List */}
       {loading ? (
         <div className="card text-center py-12">
-          <p className="text-slate-400 text-lg">Loading portfolios...</p>
+          <p className="text-text-secondary animate-pulse">Loading portfolios...</p>
         </div>
       ) : portfolios.length === 0 ? (
         <div className="card text-center py-16">
-          <p className="text-white font-semibold text-lg mb-2">
+          <div className="w-16 h-16 bg-surface-elevated rounded-full flex items-center justify-center mx-auto mb-4 text-text-secondary">
+            <Briefcase size={32} />
+          </div>
+          <p className="text-text-primary font-bold text-lg mb-2">
             No portfolios yet
           </p>
-          <p className="text-slate-400">
+          <p className="text-text-secondary">
             Start by creating your first investment portfolio.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {portfolios.map((portfolio) => {
+          {enrichedPortfolios.map((portfolio) => {
             const holdings = portfolio.holdings || [];
             const isExpanded = expandedPortfolioIds.has(portfolio._id);
+
+            // Calculate portfolio specific value
+            const portfolioValue = holdings.reduce((sum, h) => sum + (h.quantity * (h.currentPrice || 0)), 0);
 
             return (
               <div
                 key={portfolio._id}
-                className="card border border-slate-800/60 hover:border-blue-500/30 transition-all"
+                className="card border border-border overflow-hidden"
               >
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="text-2xl font-semibold text-white">
-                      {portfolio.name}
-                    </h3>
+                <div className="p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-surface hover:bg-surface-elevated transition-colors">
+                  <div className="flex-1 cursor-pointer" onClick={() => toggleExpanded(portfolio._id)}>
+                    <div className="flex items-center gap-4 mb-1">
+                      <h3 className="text-xl font-bold text-text-primary">
+                        {portfolio.name}
+                      </h3>
+                      <span className="text-success font-mono font-bold bg-success/10 px-2 py-0.5 rounded text-sm border border-success/20">
+                        {formatCurrency(portfolioValue)}
+                      </span>
+                    </div>
                     {portfolio.description && (
-                      <p className="text-slate-400 mt-1">
+                      <p className="text-text-secondary text-sm">
                         {portfolio.description}
                       </p>
                     )}
-                    <p className="text-slate-500 text-sm mt-2">
-                      Created{' '}
-                      {new Date(portfolio.createdAt).toLocaleDateString()}
-                    </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
+                      variant="secondary"
                       onClick={() => toggleExpanded(portfolio._id)}
-                      className="btn-secondary px-4 py-2"
+                      className="flex items-center gap-2"
                     >
-                      {isExpanded
-                        ? 'Hide Holdings'
-                        : `Show Holdings (${holdings.length})`}
-                    </button>
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      {isExpanded ? 'Hide' : `Holdings (${holdings.length})`}
+                    </Button>
                     <button
                       onClick={() => handleDeletePortfolio(portfolio._id)}
-                      className="btn-ghost px-4 py-2 text-red-300 border-red-400/40 hover:border-red-400 hover:text-red-200"
+                      className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors"
                       disabled={savingPortfolioId === portfolio._id}
                     >
-                      {savingPortfolioId === portfolio._id
-                        ? 'Removing...'
-                        : 'Delete'}
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-6 space-y-6">
-                    <div className="glass p-5 border border-slate-800/60">
-                      <h4 className="text-lg font-semibold text-white mb-4">
-                        Add holding
+                  <div className="border-t border-border bg-surface-elevated/30 p-6">
+                    {/* Smart Add Section */}
+                    <div className="mb-8">
+                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
+                        Add New Holding
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                        <input
-                          className="input-field"
-                          placeholder="Symbol"
-                          value={
-                            holdingForms[portfolio._id]?.symbol || ''
-                          }
-                          onChange={(event) =>
-                            handleHoldingFormChange(
-                              portfolio._id,
-                              'symbol',
-                              event.target.value.toUpperCase()
-                            )
-                          }
-                        />
-                        <input
-                          className="input-field"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Quantity"
-                          value={
-                            holdingForms[portfolio._id]?.quantity || ''
-                          }
-                          onChange={(event) =>
-                            handleHoldingFormChange(
-                              portfolio._id,
-                              'quantity',
-                              event.target.value
-                            )
-                          }
-                        />
-                        <input
-                          className="input-field"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Buy price"
-                          value={
-                            holdingForms[portfolio._id]?.buyPrice || ''
-                          }
-                          onChange={(event) =>
-                            handleHoldingFormChange(
-                              portfolio._id,
-                              'buyPrice',
-                              event.target.value
-                            )
-                          }
-                        />
-                        <input
-                          className="input-field"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Current price"
-                          value={
-                            holdingForms[portfolio._id]?.currentPrice || ''
-                          }
-                          onChange={(event) =>
-                            handleHoldingFormChange(
-                              portfolio._id,
-                              'currentPrice',
-                              event.target.value
-                            )
-                          }
-                        />
-                        <button
-                          onClick={() => handleAddHolding(portfolio._id)}
-                          className="btn-primary"
+
+                      <div className="mb-6">
+                        <SmartAddInput
+                          onAdd={(text) => handleSmartAdd(text, portfolio._id)}
                           disabled={savingPortfolioId === portfolio._id}
-                          type="button"
-                        >
-                          {savingPortfolioId === portfolio._id
-                            ? 'Saving...'
-                            : 'Add Holding'}
-                        </button>
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div className="md:col-span-3">
+                          <label className="text-xs text-text-secondary mb-1 block">Symbol</label>
+                          <input
+                            className="input-field w-full"
+                            placeholder="e.g. AAPL"
+                            value={holdingForms[portfolio._id]?.symbol || ''}
+                            onChange={(event) =>
+                              handleHoldingFormChange(
+                                portfolio._id,
+                                'symbol',
+                                event.target.value.toUpperCase()
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="text-xs text-text-secondary mb-1 block">Quantity</label>
+                          <input
+                            className="input-field w-full"
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0.00"
+                            value={holdingForms[portfolio._id]?.quantity || ''}
+                            onChange={(event) =>
+                              handleHoldingFormChange(
+                                portfolio._id,
+                                'quantity',
+                                event.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="text-xs text-text-secondary mb-1 block">Buy Price</label>
+                          <input
+                            className="input-field w-full"
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0.00"
+                            value={holdingForms[portfolio._id]?.buyPrice || ''}
+                            onChange={(event) =>
+                              handleHoldingFormChange(
+                                portfolio._id,
+                                'buyPrice',
+                                event.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <Button
+                            onClick={() => handleAddHolding(portfolio._id)}
+                            className="w-full"
+                            disabled={savingPortfolioId === portfolio._id}
+                            isLoading={savingPortfolioId === portfolio._id}
+                          >
+                            Add Manually
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
+                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
+                        Current Holdings
+                      </h4>
+
                       {holdings.length === 0 ? (
-                        <div className="glass p-5 text-slate-400 text-sm text-center border border-slate-800/60">
-                          No holdings recorded yet.
+                        <div className="text-center py-8 border border-dashed border-border rounded-full">
+                          <p className="text-text-secondary text-sm">No holdings recorded yet.</p>
                         </div>
                       ) : (
-                        holdings.map((holding) => (
-                          <div
-                            key={holding._id}
-                            className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 glass border border-slate-800/60 px-4 py-4"
-                          >
-                            <div>
-                              <p className="text-lg font-semibold text-white">
-                                {holding.symbol}
-                              </p>
-                              <p className="text-slate-400 text-sm">
-                                Quantity: {holding.quantity} · Bought at{' '}
-                                {formatCurrency(holding.buyPrice)} · Current{' '}
-                                {formatCurrency(holding.currentPrice)}
-                              </p>
-                              <p className="text-slate-500 text-xs mt-1">
-                                Purchased{' '}
-                                {new Date(
-                                  holding.purchaseDate
-                                ).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() =>
-                                handleDeleteHolding(portfolio._id, holding._id)
-                              }
-                              className="btn-ghost px-4 py-2 text-red-300 border-red-400/40 hover:border-red-400 hover:text-red-200"
-                              disabled={savingPortfolioId === portfolio._id}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))
+                        <div className="grid grid-cols-1 gap-3">
+                          {holdings.map((holding) => {
+                            const currentValue = holding.quantity * (holding.currentPrice || 0);
+                            const buyValue = holding.quantity * holding.buyPrice;
+                            const gainLoss = currentValue - buyValue;
+                            const gainLossPercent = (gainLoss / buyValue) * 100;
+                            const isPositive = gainLoss >= 0;
+
+                            return (
+                              <div
+                                key={holding._id}
+                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface border border-border rounded-full p-4 hover:border-primary/30 transition-colors"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-bold text-xs">
+                                    {holding.symbol.substring(0, 2)}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-bold text-text-primary">
+                                        {holding.symbol}
+                                      </p>
+                                      <span className="text-xs text-text-secondary bg-surface-elevated px-1.5 py-0.5 rounded">
+                                        {holding.quantity} shares
+                                      </span>
+                                    </div>
+                                    <p className="text-text-secondary text-xs mt-0.5">
+                                      Avg. Buy: {formatCurrency(holding.buyPrice)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-6 md:justify-end flex-1">
+                                  <div className="text-right">
+                                    <p className="text-text-secondary text-xs">Current Price</p>
+                                    <p className="font-mono text-text-primary text-sm">
+                                      {formatCurrency(holding.currentPrice)}
+                                    </p>
+                                  </div>
+
+                                  <div className="text-right min-w-[100px]">
+                                    <p className="text-text-secondary text-xs">Total Value</p>
+                                    <p className="font-mono font-bold text-text-primary">
+                                      {formatCurrency(currentValue)}
+                                    </p>
+                                  </div>
+
+                                  <div className="text-right min-w-[100px]">
+                                    <p className="text-text-secondary text-xs">Gain/Loss</p>
+                                    <div className={`flex items-center justify-end gap-1 font-mono font-bold ${isPositive ? "text-success" : "text-error"}`}>
+                                      {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                      <span>
+                                        {isPositive ? '+' : ''}{formatCurrency(gainLoss)}
+                                      </span>
+                                    </div>
+                                    <p className={`text-xs ${isPositive ? "text-success" : "text-error"}`}>
+                                      ({gainLossPercent.toFixed(2)}%)
+                                    </p>
+                                  </div>
+
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteHolding(portfolio._id, holding._id)
+                                    }
+                                    className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors ml-2"
+                                    disabled={savingPortfolioId === portfolio._id}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

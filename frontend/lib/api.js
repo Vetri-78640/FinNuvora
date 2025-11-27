@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getCookie } from './cookies';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL 
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 const api = axios.create({
   baseURL: API_URL,
@@ -26,7 +26,7 @@ api.interceptors.response.use(
   (error) => {
     // Don't redirect on auth endpoints (login/register)
     const isAuthEndpoint = error.config?.url?.includes('/auth/');
-    
+
     if (error.response?.status === 401 && !isAuthEndpoint) {
       // Clear cookies and redirect to login only for protected routes
       if (typeof window !== 'undefined') {
@@ -65,12 +65,17 @@ export const categoryAPI = {
 export const transactionAPI = {
   getTransactions: (params) => api.get('/transactions', { params }),
   createTransaction: (data) => api.post('/transactions', data),
+  smartAdd: (text) => api.post('/transactions/smart-add', { text }),
   updateTransaction: (id, data) => api.put(`/transactions/${id}`, data),
   deleteTransaction: (id) => api.delete(`/transactions/${id}`),
   getStats: (params) => api.get('/transactions/stats/summary', { params }),
   uploadPDF: (formData) => api.post('/transactions/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  }),
+  scanReceipt: (formData) => api.post('/transactions/scan-receipt', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  detectRecurring: () => api.get('/transactions/detect-recurring')
 };
 
 export const goalAPI = {
@@ -98,8 +103,14 @@ export const stockAPI = {
   getQuote: (symbol) => api.get(`/stocks/quote/${symbol}`),
   getDaily: (symbol, outputsize) =>
     api.get(`/stocks/daily/${symbol}`, { params: { outputsize } }),
-  getBatch: (symbols) => api.post('/stocks/batch', { symbols }),
-  search: (keyword) => api.get('/stocks/search', { params: { keyword } })
+  getBatch: (symbols) => api.get(`/stocks/batch?symbols=${symbols}`),
+  search: (query) => api.get(`/stocks/search?query=${query}`)
+};
+
+export const chatAPI = {
+  getHistory: () => api.get('/chat/history'),
+  sendMessage: (message) => api.post('/chat/send', { message }),
+  clearHistory: () => api.delete('/chat/history')
 };
 
 export const portfolioAPI = {
@@ -115,8 +126,15 @@ export const holdingAPI = {
     api.get(`/holding/portfolio/${portfolioId}`),
   getHolding: (id) => api.get(`/holding/${id}`),
   createHolding: (data) => api.post('/holding', data),
+  smartAdd: (text, portfolioId) => api.post('/holding/smart-add', { text, portfolioId }),
   updateHolding: (id, data) => api.put(`/holding/${id}`, data),
   deleteHolding: (id) => api.delete(`/holding/${id}`)
+};
+
+export const plaidAPI = {
+  createLinkToken: () => api.post('/plaid/create_link_token'),
+  setAccessToken: (public_token) => api.post('/plaid/set_access_token', { public_token }),
+  syncTransactions: () => api.post('/plaid/sync_transactions')
 };
 
 export default api;

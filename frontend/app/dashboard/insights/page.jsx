@@ -3,18 +3,15 @@
 import { useEffect, useState } from 'react';
 import { insightsAPI, transactionAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
+import { Sparkles, Calendar, TrendingUp, TrendingDown, DollarSign, PieChart, ArrowRight, Activity } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+import Button from '@/components/ui/Button';
 
 const defaultForm = {
   startDate: '',
   endDate: '',
 };
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
 
 const formatInsightText = (text) => {
   if (!text) return [];
@@ -26,6 +23,7 @@ const formatInsightText = (text) => {
 
 export default function InsightsPage() {
   useProtectedRoute();
+  const { formatCurrency } = useCurrency();
 
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
@@ -75,7 +73,7 @@ export default function InsightsPage() {
     } catch (err) {
       setError(
         err.response?.data?.error ||
-          'Unable to generate insights right now. Please try again later.'
+        'Unable to generate insights right now. Please try again later.'
       );
     } finally {
       setLoading(false);
@@ -83,40 +81,32 @@ export default function InsightsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
+            <Sparkles className="text-primary" size={32} />
             AI Financial Insights
           </h2>
-          <p className="text-slate-400 mt-2">
-            Generate personalized summaries and recommendations using your
-            financial data.
-          </p>
-        </div>
-        <div className="card px-5 py-4 text-sm text-slate-300">
-          <p className="font-semibold text-white mb-1">How it works</p>
-          <p>
-            Pick a date range and FinNuvora will analyze your transactions to
-            surface opportunities, risks, and actionable insights.
+          <p className="text-text-secondary mt-1">
+            Generate personalized summaries and recommendations using your financial data
           </p>
         </div>
       </div>
 
-      <div className="card">
-        <h3 className="text-xl font-semibold text-white mb-4">
-          Choose a date range
+      {/* Date Selection Card */}
+      <div className="card p-6">
+        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+          <Calendar size={20} className="text-primary" /> Analysis Period
         </h3>
         <form
           onSubmit={handleGenerateInsights}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
         >
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Start date
-            </label>
+          <div className="md:col-span-4">
+            <label className="text-xs text-text-secondary mb-1 block">Start Date</label>
             <input
-              className="input-field"
+              className="input-field w-full"
               type="date"
               value={form.startDate}
               onChange={(event) =>
@@ -124,12 +114,10 @@ export default function InsightsPage() {
               }
             />
           </div>
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              End date
-            </label>
+          <div className="md:col-span-4">
+            <label className="text-xs text-text-secondary mb-1 block">End Date</label>
             <input
-              className="input-field"
+              className="input-field w-full"
               type="date"
               value={form.endDate}
               onChange={(event) =>
@@ -137,161 +125,208 @@ export default function InsightsPage() {
               }
             />
           </div>
-          <div className="flex items-end gap-3 md:col-span-2">
-            <button
+          <div className="md:col-span-4 flex gap-3">
+            <Button
               type="submit"
-              className="btn-primary w-full md:w-auto"
+              className="flex-1"
+              isLoading={loading}
               disabled={loading}
             >
-              {loading ? 'Generating insights...' : 'Generate insights'}
-            </button>
+              Generate Insights
+            </Button>
             {(form.startDate || form.endDate) && (
-              <button
+              <Button
                 type="button"
-                className="btn-ghost px-4 py-3"
+                variant="ghost"
                 onClick={() => setForm(defaultForm)}
                 disabled={loading}
               >
-                Clear dates
-              </button>
+                Clear
+              </Button>
             )}
           </div>
         </form>
-        <p className="text-slate-500 text-sm mt-3">
-          Leave the date fields empty to analyze your entire transaction
-          history.
+        <p className="text-text-secondary text-xs mt-3 flex items-center gap-1">
+          <Activity size={12} />
+          Leave dates empty to analyze your entire transaction history.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3">
+        <div className="p-4 rounded-full bg-error/10 border border-error/20 text-error text-sm">
           {error}
         </div>
       )}
 
+      {/* Stats Section */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="card px-5 py-4">
-            <p className="text-slate-400 text-sm">Total income</p>
-            <p className="text-2xl font-semibold text-emerald-300 mt-1">
-              {formatCurrency(stats.totalIncome)}
-            </p>
-          </div>
-          <div className="card px-5 py-4">
-            <p className="text-slate-400 text-sm">Total expenses</p>
-            <p className="text-2xl font-semibold text-red-300 mt-1">
-              {formatCurrency(stats.totalExpense)}
-            </p>
-          </div>
-          <div className="card px-5 py-4">
-            <p className="text-slate-400 text-sm">Investments</p>
-            <p className="text-2xl font-semibold text-blue-300 mt-1">
-              {formatCurrency(stats.totalInvestment)}
-            </p>
-          </div>
-          <div className="card px-5 py-4">
-            <p className="text-slate-400 text-sm">Savings rate</p>
-            <p
-              className={`text-2xl font-semibold mt-1 ${
-                stats.savingsRate >= 0
-                  ? 'text-emerald-300'
-                  : 'text-red-300'
-              }`}
-            >
-              {stats.savingsRate}%
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            icon={TrendingUp}
+            title="Total Income"
+            subtitle={formatCurrency(stats.totalIncome)}
+            color="green"
+          />
+          <StatCard
+            icon={TrendingDown}
+            title="Total Expenses"
+            subtitle={formatCurrency(stats.totalExpense)}
+            color="red"
+          />
+          <StatCard
+            icon={DollarSign}
+            title="Investments"
+            subtitle={formatCurrency(stats.totalInvestment)}
+            color="blue"
+          />
+          <StatCard
+            icon={PieChart}
+            title="Savings Rate"
+            subtitle={`${stats.savingsRate}%`}
+            color={stats.savingsRate >= 0 ? "green" : "red"}
+          />
         </div>
       )}
 
+      {/* Insights Result */}
       {insights && (
-        <div className="card border border-blue-500/30 bg-blue-500/5 space-y-4">
-          <h3 className="text-xl font-semibold text-white">
-            Personalized insights
+        <div className="card p-8 border-primary/30 bg-gradient-to-br from-surface to-surface-elevated relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+
+          <h3 className="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3">
+            <Sparkles className="text-primary animate-pulse" size={24} />
+            Your Financial Analysis
           </h3>
-          <div className="space-y-3 text-slate-200 leading-relaxed">
-            {formatInsightText(insights).map((line, index) => (
-              <p key={index}>{line}</p>
-            ))}
+
+          <div className="space-y-4 text-text-secondary leading-relaxed relative z-10">
+            {formatInsightText(insights).map((line, index) => {
+              // Handle Headers
+              if (line.startsWith('###')) {
+                return (
+                  <h4 key={index} className="text-lg font-bold text-primary mt-6 mb-2 border-b border-border pb-2">
+                    {line.replace(/###/g, '').trim()}
+                  </h4>
+                );
+              }
+
+              // Handle Bullet Points
+              if (line.startsWith('* ') || line.startsWith('- ')) {
+                const content = line.substring(2);
+                return (
+                  <div key={index} className="flex gap-3 ml-2 mb-2 group">
+                    <span className="text-primary mt-1.5 group-hover:scale-125 transition-transform">•</span>
+                    <p className="text-text-primary/90">
+                      {content.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={i} className="text-white font-bold">{part.slice(2, -2)}</strong>;
+                        }
+                        return part;
+                      })}
+                    </p>
+                  </div>
+                );
+              }
+
+              // Handle Regular Paragraphs with Bold
+              return (
+                <p key={index} className="text-text-primary/80">
+                  {line.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="text-white font-bold">{part.slice(2, -2)}</strong>;
+                    }
+                    return part;
+                  })}
+                </p>
+              );
+            })}
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card h-full">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Recent transactions
+        {/* Recent Transactions */}
+        <div className="card p-6 h-full">
+          <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center justify-between">
+            Recent Transactions
+            <ArrowRight size={16} className="text-text-secondary" />
           </h3>
           {recentTransactions.length === 0 ? (
-            <p className="text-slate-500 text-sm">No recent transactions</p>
+            <div className="text-center py-8">
+              <p className="text-text-secondary text-sm">No recent transactions</p>
+            </div>
           ) : (
-            <ul className="space-y-3">
+            <div className="space-y-3">
               {recentTransactions.map((transaction) => (
-                <li
+                <div
                   key={transaction._id}
-                  className="glass border border-slate-800/60 px-4 py-3 rounded-xl flex items-center justify-between"
+                  className="flex items-center justify-between p-3 rounded-full bg-surface-elevated/50 hover:bg-surface-elevated transition-colors border border-transparent hover:border-primary/20"
                 >
                   <div>
-                    <p className="text-white font-medium">
+                    <p className="text-text-primary font-medium">
                       {transaction.category?.name || 'Uncategorized'}
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">
+                    <p className="text-text-secondary text-xs mt-0.5">
                       {new Date(transaction.date).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
                     <p
-                      className={`font-semibold ${
-                        transaction.type === 'income'
-                          ? 'text-emerald-300'
-                          : transaction.type === 'expense'
-                          ? 'text-red-300'
-                          : 'text-blue-300'
-                      }`}
+                      className={`font-bold ${transaction.type === 'income'
+                        ? 'text-success'
+                        : transaction.type === 'expense'
+                          ? 'text-error'
+                          : 'text-blue-400'
+                        }`}
                     >
                       {formatCurrency(transaction.amount)}
                     </p>
-                    <p className="text-slate-500 text-xs capitalize">
+                    <p className="text-text-secondary text-[10px] uppercase tracking-wider">
                       {transaction.type}
                     </p>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
-        <div className="card h-full">
+
+        {/* Price History */}
+        <div className="card p-6 h-full">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              Price history snapshots
+            <h3 className="text-lg font-bold text-text-primary">
+              Market Snapshots
             </h3>
-            <span className="text-slate-500 text-xs">
+            <span className="text-text-secondary text-xs bg-surface-elevated px-2 py-1 rounded-full">
               Latest 10 entries
             </span>
           </div>
           {historyLoading ? (
-            <p className="text-slate-500 text-sm">Loading price history...</p>
+            <div className="text-center py-8">
+              <p className="text-text-secondary text-sm animate-pulse">Loading price history...</p>
+            </div>
           ) : history.length === 0 ? (
-            <p className="text-slate-500 text-sm">No history available yet.</p>
+            <div className="text-center py-8">
+              <p className="text-text-secondary text-sm">No history available yet.</p>
+            </div>
           ) : (
-            <ul className="space-y-3">
+            <div className="space-y-3">
               {history.map((entry) => (
-                <li
+                <div
                   key={entry._id}
-                  className="glass border border-slate-800/60 px-4 py-3 rounded-xl flex items-center justify-between"
+                  className="flex items-center justify-between p-3 rounded-full bg-surface-elevated/50 border border-transparent hover:border-primary/20 transition-colors"
                 >
                   <div>
-                    <p className="text-white font-semibold">{entry.symbol}</p>
-                    <p className="text-slate-500 text-xs">
+                    <p className="text-text-primary font-bold">{entry.symbol}</p>
+                    <p className="text-text-secondary text-xs mt-0.5">
                       {new Date(entry.timestamp).toLocaleString()}
                     </p>
                   </div>
-                  <p className="text-blue-300 font-semibold">
+                  <p className="text-primary font-mono font-bold">
                     {formatCurrency(entry.price)}
                   </p>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>

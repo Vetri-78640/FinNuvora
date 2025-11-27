@@ -58,6 +58,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/stocks', stockRoutes);
+app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/plaid', require('./routes/plaidRoutes'));
 
 app.get('/', (_req, res) => {
   res.json({ success: true, message: 'Server is running' });

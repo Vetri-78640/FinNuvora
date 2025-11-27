@@ -18,6 +18,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    currency: {
+      type: String,
+      default: 'USD',
+      enum: ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'],
+      trim: true,
+    },
+    accountBalance: {
+      type: Number,
+      default: 0,
+    },
+    plaidAccessToken: {
+      type: String,
+      default: null,
+    },
+    plaidItemId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -4,60 +4,162 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCookie } from '@/lib/cookies';
 import { useEffect, useState } from 'react';
+import { useTheme } from '@/lib/contexts/ThemeContext';
+import { Sun, Moon, Menu, X, ArrowRight } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 export default function Navbar() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(Boolean(getCookie('authToken')));
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleLogout = () => {
+    document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'userData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    router.push('/');
+  };
+
   return (
-    <nav className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/30">
-      <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="font-bold text-xl text-white tracking-tight">FinNuvora</span>
+    <nav
+      className={`fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-50 transition-all duration-300 rounded-full border border-white/10 shadow-2xl shadow-black/50 backdrop-blur-xl ${scrolled
+        ? 'bg-black/30 py-2'
+        : 'bg-white/5 py-4'
+        }`}
+    >
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <img src="/logo.svg" alt="FinNuvora Logo" className="w-10 h-10 group-hover:scale-105 transition-transform duration-300" />
+          <span className="font-bold text-xl text-text-primary tracking-tight">FinNuvora</span>
         </Link>
-        
-        <div className="flex items-center gap-4">
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-8">
+          <div className="flex items-center gap-6">
+            <Link href="/features" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
+              Features
+            </Link>
+            <Link href="/pricing" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
+              Pricing
+            </Link>
+            <Link href="#about" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
+              About
+            </Link>
+          </div>
+
+          <div className="w-px h-6 bg-border" />
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard">
+                  <Button variant="ghost">Dashboard</Button>
+                </Link>
+                <Button onClick={handleLogout} variant="secondary">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login">
+                  <Button variant="ghost">Sign in</Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button>
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button
+          className="md:hidden text-text-primary p-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-20 left-0 w-full bg-background border-b border-border p-6 flex flex-col gap-4 shadow-xl animate-slide-in">
+          <Link
+            href="/features"
+            className="text-lg font-medium text-text-secondary hover:text-text-primary py-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Features
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-lg font-medium text-text-secondary hover:text-text-primary py-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Pricing
+          </Link>
+          <div className="h-px bg-border my-2" />
+
+          <div className="flex items-center justify-between py-2">
+            <span className="text-text-secondary">Theme</span>
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
+
           {isAuthenticated ? (
-            <>
-              <Link 
-                href="/dashboard" 
-                className="px-5 py-2 rounded-lg text-slate-300 hover:text-white transition-colors"
-              >
-                Dashboard
+            <div className="flex flex-col gap-3 mt-2">
+              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full justify-center">Dashboard</Button>
               </Link>
-              <button
-                onClick={() => {
-                  document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                  document.cookie = 'userData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                  router.push('/');
-                }}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
+              <Button onClick={handleLogout} variant="secondary" className="w-full justify-center">
                 Logout
-              </button>
-            </>
+              </Button>
+            </div>
           ) : (
-            <>
-              <Link 
-                href="/auth/login" 
-                className="hidden md:inline-block px-5 py-2 rounded-lg text-slate-300 hover:text-white transition-colors"
-              >
-                Sign in
+            <div className="flex flex-col gap-3 mt-2">
+              <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="secondary" className="w-full justify-center">Sign in</Button>
               </Link>
-              <Link 
-                href="/auth/register" 
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Get Started
+              <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full justify-center">
+                  Get Started
+                </Button>
               </Link>
-            </>
+            </div>
           )}
         </div>
-      </div>
+      )}
     </nav>
   );
 }

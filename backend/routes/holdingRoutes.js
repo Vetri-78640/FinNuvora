@@ -13,6 +13,7 @@ const router = express.Router();
 router.use(auth);
 
 router.post('/', createHolding);
+router.post('/smart-add', require('../controllers/holdingController').smartAddHolding);
 router.get('/portfolio/:portfolioId', getHoldingsByPortfolio);
 router.get('/:holdingId', getHoldingById);
 router.put('/:holdingId', updateHolding);

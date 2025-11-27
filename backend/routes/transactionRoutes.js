@@ -7,7 +7,10 @@ const router = express.Router();
 router.use(auth);
 
 router.post('/upload', uploadTransaction);
+router.post('/scan-receipt', require('../controllers/transactionController').scanReceipt);
 router.post('/', createTransaction);
+router.post('/smart-add', require('../controllers/transactionController').smartAddTransaction);
+router.get('/detect-recurring', require('../controllers/transactionController').detectRecurring);
 router.get('/', getTransactions);
 router.get('/stats/summary', getTransactionStats);
 router.put('/:id', updateTransaction);

@@ -3,92 +3,81 @@
 import { useEffect, useState } from 'react';
 import { userAPI, preferencesAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
-
-const defaultProfileForm = {
-  name: '',
-  email: '',
-};
-
-const defaultPasswordForm = {
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-};
-
-const defaultPreferencesForm = {
-  theme: 'dark',
-  notifications: {
-    priceAlert: true,
-    portfolioUpdate: true,
-  },
-  currency: 'USD',
-  language: 'en',
-};
+import { useTheme } from '@/lib/contexts/ThemeContext';
+import { User, Lock, Settings, Bell, Wallet } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
 
 export default function ProfilePage() {
   useProtectedRoute();
+  const { setTheme } = useTheme();
 
-  const [profile, setProfile] = useState(null);
-  const [profileForm, setProfileForm] = useState(defaultProfileForm);
-  const [passwordForm, setPasswordForm] = useState(defaultPasswordForm);
-  const [preferences, setPreferences] = useState(defaultPreferencesForm);
+  const { currency, updateCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    email: '',
+    accountBalance: '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [preferences, setPreferences] = useState({
+    theme: 'system',
+    currency: 'USD',
+    language: 'en',
+    notifications: {
+      priceAlert: false,
+      portfolioUpdate: false,
+    },
+  });
   const [savingProfile, setSavingProfile] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [availableCurrencies] = useState(['USD', 'EUR', 'GBP', 'JPY', 'INR']);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const fetchProfile = async () => {
       try {
         setLoading(true);
-        setError('');
-        const [profileRes, preferencesRes] = await Promise.all([
-          userAPI.getProfile(),
-          preferencesAPI.getPreferences(),
-        ]);
-
-        setProfile(profileRes.data.user);
+        const user = await userAPI.getProfile();
         setProfileForm({
-          name: profileRes.data.user.name,
-          email: profileRes.data.user.email,
+          name: user.name || '',
+          email: user.email || '',
+          accountBalance: user.accountBalance || '',
         });
-        if (preferencesRes.data.preferences) {
-          setPreferences({
-            theme: preferencesRes.data.preferences.theme ?? 'dark',
-            notifications: {
-              priceAlert:
-                preferencesRes.data.preferences.notifications?.priceAlert ?? true,
-              portfolioUpdate:
-                preferencesRes.data.preferences.notifications?.portfolioUpdate ??
-                true,
-            },
-            currency: preferencesRes.data.preferences.currency ?? 'USD',
-            language: preferencesRes.data.preferences.language ?? 'en',
-          });
-        }
+
+        const prefs = await preferencesAPI.getPreferences();
+        setPreferences({
+          theme: prefs.theme || 'system',
+          currency: prefs.currency || 'USD',
+          language: prefs.language || 'en',
+          notifications: {
+            priceAlert: prefs.notifications?.priceAlert || false,
+            portfolioUpdate: prefs.notifications?.portfolioUpdate || false,
+          }
+        });
       } catch (err) {
-        setError(
-          err.response?.data?.error ||
-            'Failed to load profile information. Please try again.'
-        );
+        console.error(err);
+        setError('Failed to load profile');
       } finally {
         setLoading(false);
       }
     };
-
-    loadProfile();
+    fetchProfile();
   }, []);
 
-  const handleSaveProfile = async (event) => {
-    event.preventDefault();
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
     try {
       setSavingProfile(true);
       setError('');
       setSuccess('');
-      const { data } = await userAPI.updateProfile(profileForm);
-      setProfile(data.user);
+      await userAPI.updateProfile(profileForm);
       setSuccess('Profile updated successfully');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update profile');
@@ -97,13 +86,12 @@ export default function ProfilePage() {
     }
   };
 
-  const handleChangePassword = async (event) => {
-    event.preventDefault();
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('New password and confirmation do not match');
+      setError('New passwords do not match');
       return;
     }
-
     try {
       setChangingPassword(true);
       setError('');
@@ -112,8 +100,8 @@ export default function ProfilePage() {
         passwordForm.oldPassword,
         passwordForm.newPassword
       );
-      setSuccess('Password updated successfully');
-      setPasswordForm(defaultPasswordForm);
+      setSuccess('Password changed successfully');
+      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to change password');
     } finally {
@@ -127,6 +115,15 @@ export default function ProfilePage() {
       setSavingPreferences(true);
       setError('');
       setSuccess('');
+
+      // Update currency via context
+      if (preferences.currency !== currency) {
+        await updateCurrency(preferences.currency);
+      }
+
+      // Update theme context
+      setTheme(preferences.theme);
+
       const payload = {
         theme: preferences.theme,
         currency: preferences.currency,
@@ -145,300 +142,208 @@ export default function ProfilePage() {
     }
   };
 
-  const handleResetPreferences = async () => {
-    const confirmed = window.confirm(
-      'Reset preferences to defaults? This action cannot be undone.'
-    );
-    if (!confirmed) return;
-
-    try {
-      setSavingPreferences(true);
-      setError('');
-      setSuccess('');
-      const { data } = await preferencesAPI.resetPreferences();
-      setPreferences({
-        theme: data.preferences.theme,
-        notifications: data.preferences.notifications,
-        currency: data.preferences.currency,
-        language: data.preferences.language,
-      });
-      setSuccess('Preferences reset to defaults');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to reset preferences');
-    } finally {
-      setSavingPreferences(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="card text-center py-12">
-        <p className="text-slate-400 text-lg">Loading profile...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-5xl mx-auto">
       <div>
-        <h2 className="text-3xl font-bold text-white tracking-tight">
-          Profile &amp; Preferences
-        </h2>
-        <p className="text-slate-400 mt-2">
-          Manage your personal information, password, and app preferences.
-        </p>
+        <h1 className="text-3xl font-bold text-text-primary mb-2">Profile Settings</h1>
+        <p className="text-text-secondary">Manage your account settings and preferences.</p>
       </div>
 
-      {(error || success) && (
-        <div
-          className={`rounded-xl border px-4 py-3 ${
-            error
-              ? 'border-red-500/40 bg-red-500/10 text-red-300'
-              : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
-          }`}
-        >
-          {error || success}
+      {error && (
+        <div className="bg-error/10 border border-error/20 text-error p-4 rounded-full">
+          {error}
         </div>
       )}
 
-      <div className="card space-y-6">
-        <div>
-          <h3 className="text-xl font-semibold text-white">Profile details</h3>
-          <p className="text-slate-400 text-sm mt-1">
-            Joined{' '}
-            {profile
-              ? new Date(profile.createdAt).toLocaleDateString()
-              : '—'}
-          </p>
+      {success && (
+        <div className="bg-success/10 border border-success/20 text-success p-4 rounded-full">
+          {success}
         </div>
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      )}
+
+      <div className="grid gap-8 md:grid-cols-2">
+        {/* Personal Information */}
+        <div className="bg-[#000000] p-6 rounded-3xl">
+          <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
+            <User size={20} className="text-primary" />
+            Personal Information
+          </h2>
+          <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="text-slate-300 text-sm font-medium mb-2 block">
-                Full name
-              </label>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Full Name</label>
               <input
-                className="input-field"
+                type="text"
                 value={profileForm.name}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    name: event.target.value,
-                  }))
-                }
-                required
+                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                className="input-field w-full"
+                placeholder="John Doe"
               />
             </div>
             <div>
-              <label className="text-slate-300 text-sm font-medium mb-2 block">
-                Email address
-              </label>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Email Address</label>
               <input
-                className="input-field"
                 type="email"
                 value={profileForm.email}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    email: event.target.value,
-                  }))
-                }
-                required
+                onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                className="input-field w-full"
+                placeholder="john@example.com"
               />
             </div>
-          </div>
-          <button type="submit" className="btn-primary" disabled={savingProfile}>
-            {savingProfile ? 'Saving...' : 'Save profile'}
-          </button>
-        </form>
-      </div>
-
-      <div className="card space-y-6">
-        <div>
-          <h3 className="text-xl font-semibold text-white">Change password</h3>
-          <p className="text-slate-400 text-sm mt-1">
-            Use a strong password that you don&apos;t reuse elsewhere.
-          </p>
-        </div>
-        <form onSubmit={handleChangePassword} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Current password
-            </label>
-            <input
-              type="password"
-              className="input-field"
-              value={passwordForm.oldPassword}
-              onChange={(event) =>
-                setPasswordForm((prev) => ({
-                  ...prev,
-                  oldPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              New password
-            </label>
-            <input
-              type="password"
-              className="input-field"
-              value={passwordForm.newPassword}
-              onChange={(event) =>
-                setPasswordForm((prev) => ({
-                  ...prev,
-                  newPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Confirm new password
-            </label>
-            <input
-              type="password"
-              className="input-field"
-              value={passwordForm.confirmPassword}
-              onChange={(event) =>
-                setPasswordForm((prev) => ({
-                  ...prev,
-                  confirmPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="btn-primary md:col-span-3"
-            disabled={changingPassword}
-          >
-            {changingPassword ? 'Updating...' : 'Update password'}
-          </button>
-        </form>
-      </div>
-
-      <div className="card space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-semibold text-white">App preferences</h3>
-            <p className="text-slate-400 text-sm mt-1">
-              Tailor FinNuvora to match your experience.
-            </p>
-          </div>
-          <button
-            className="btn-ghost px-4 py-3"
-            onClick={handleResetPreferences}
-            disabled={savingPreferences}
-          >
-            Reset to defaults
-          </button>
-        </div>
-        <form onSubmit={handleSavePreferences} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Theme
-            </label>
-            <select
-              className="input-field"
-              value={preferences.theme}
-              onChange={(event) =>
-                setPreferences((prev) => ({
-                  ...prev,
-                  theme: event.target.value,
-                }))
-              }
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Account Balance</label>
+              <div className="relative">
+                <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                <input
+                  type="number"
+                  value={profileForm.accountBalance}
+                  onChange={(e) => setProfileForm({ ...profileForm, accountBalance: e.target.value })}
+                  className="input-field w-full pl-10"
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-xs text-text-secondary mt-1">Initial balance for your account.</p>
+            </div>
+            <Button
+              type="submit"
+              isLoading={savingProfile}
+              disabled={savingProfile}
+              className="w-full"
             >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Currency
-            </label>
-            <input
-              className="input-field"
-              value={preferences.currency}
-              onChange={(event) =>
-                setPreferences((prev) => ({
-                  ...prev,
-                  currency: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div>
-            <label className="text-slate-300 text-sm font-medium mb-2 block">
-              Language
-            </label>
-            <select
-              className="input-field"
-              value={preferences.language}
-              onChange={(event) =>
-                setPreferences((prev) => ({
-                  ...prev,
-                  language: event.target.value,
-                }))
-              }
+              Save Changes
+            </Button>
+          </form>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-[#000000] p-6 rounded-3xl">
+          <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
+            <Lock size={20} className="text-primary" />
+            Change Password
+          </h2>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Current Password</label>
+              <input
+                type="password"
+                value={passwordForm.oldPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                className="input-field w-full"
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">New Password</label>
+              <input
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                className="input-field w-full"
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Confirm New Password</label>
+              <input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                className="input-field w-full"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="secondary"
+              isLoading={changingPassword}
+              disabled={changingPassword}
+              className="w-full"
             >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-3 border border-slate-800/60 rounded-xl p-4 bg-slate-900/40">
-            <span className="text-slate-300 text-sm font-medium">
-              Notifications
-            </span>
-            <label className="flex items-center justify-between text-slate-200">
-              <span>Price alerts</span>
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={preferences.notifications.priceAlert}
-                onChange={(event) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    notifications: {
-                      ...prev.notifications,
-                      priceAlert: event.target.checked,
-                    },
-                  }))
-                }
-              />
-            </label>
-            <label className="flex items-center justify-between text-slate-200">
-              <span>Portfolio updates</span>
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={preferences.notifications.portfolioUpdate}
-                onChange={(event) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    notifications: {
-                      ...prev.notifications,
-                      portfolioUpdate: event.target.checked,
-                    },
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <button
-            type="submit"
-            className="btn-primary md:col-span-2"
-            disabled={savingPreferences}
-          >
-            {savingPreferences ? 'Saving...' : 'Save preferences'}
-          </button>
-        </form>
+              Update Password
+            </Button>
+          </form>
+        </div>
+
+        {/* App Preferences */}
+        <div className="bg-[#000000] p-6 rounded-3xl md:col-span-2">
+          <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
+            <Settings size={20} className="text-primary" />
+            App Preferences
+          </h2>
+          <form onSubmit={handleSavePreferences} className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Theme</label>
+              <select
+                value={preferences.theme}
+                onChange={(e) => setPreferences({ ...preferences, theme: e.target.value })}
+                className="input-field w-full"
+              >
+                <option value="dark">Dark Mode</option>
+                <option value="light">Light Mode</option>
+                <option value="system">System Default</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Currency</label>
+              <select
+                value={preferences.currency}
+                onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
+                className="input-field w-full"
+              >
+                {availableCurrencies.map((curr) => (
+                  <option key={curr} value={curr}>
+                    {curr}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-text-secondary text-xs font-medium mb-4 block flex items-center gap-2">
+                <Bell size={16} /> Notifications
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-full border border-border hover:border-primary/50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={preferences.notifications.priceAlert}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      notifications: { ...preferences.notifications, priceAlert: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-border bg-surface-elevated text-primary focus:ring-primary focus:ring-offset-surface"
+                  />
+                  <span className="text-text-secondary group-hover:text-text-primary transition-colors">Price Alerts</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-full border border-border hover:border-primary/50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={preferences.notifications.portfolioUpdate}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      notifications: { ...preferences.notifications, portfolioUpdate: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-border bg-surface-elevated text-primary focus:ring-primary focus:ring-offset-surface"
+                  />
+                  <span className="text-text-secondary group-hover:text-text-primary transition-colors">Portfolio Updates</span>
+                </label>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Button
+                type="submit"
+                isLoading={savingPreferences}
+                disabled={savingPreferences}
+                className="w-full"
+              >
+                Save Preferences
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { goalAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
+import { Target, CheckCircle, TrendingUp, Flag, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+import Button from '@/components/ui/Button';
 
 const defaultGoalForm = {
   title: '',
@@ -17,21 +21,15 @@ const defaultProgressForm = {
 };
 
 const statusOptions = [
-  { value: '', label: 'All goals' },
+  { value: '', label: 'All Goals' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
   { value: 'abandoned', label: 'Abandoned' },
 ];
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
-
 export default function GoalsPage() {
   useProtectedRoute();
+  const { formatCurrency } = useCurrency();
 
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,13 +176,7 @@ export default function GoalsPage() {
 
   const summary = useMemo(() => {
     if (!goals.length) {
-      return {
-        total: 0,
-        active: 0,
-        completed: 0,
-        totalSaved: 0,
-        totalTarget: 0,
-      };
+      return { total: 0, active: 0, completed: 0, totalSaved: 0, totalTarget: 0 };
     }
 
     return goals.reduce(
@@ -192,63 +184,61 @@ export default function GoalsPage() {
         acc.total += 1;
         acc.totalSaved += goal.currentAmount;
         acc.totalTarget += goal.targetAmount;
-        if (goal.status === 'completed') {
-          acc.completed += 1;
-        } else if (goal.status === 'active') {
-          acc.active += 1;
-        }
+        if (goal.status === 'completed') acc.completed += 1;
+        else if (goal.status === 'active') acc.active += 1;
         return acc;
       },
-      {
-        total: 0,
-        active: 0,
-        completed: 0,
-        totalSaved: 0,
-        totalTarget: 0,
-      }
+      { total: 0, active: 0, completed: 0, totalSaved: 0, totalTarget: 0 }
     );
   }, [goals]);
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-6 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl font-bold text-text-primary tracking-tight">
             Financial Goals
           </h2>
-          <p className="text-slate-400 mt-2">
-            Track your progress and stay on top of every milestone.
+          <p className="text-text-secondary mt-1">
+            Track your progress and achieve your dreams
           </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="card px-4 py-3 text-center">
-            <p className="text-slate-400 text-xs uppercase">Active goals</p>
-            <p className="text-xl font-semibold text-white">{summary.active}</p>
-          </div>
-          <div className="card px-4 py-3 text-center">
-            <p className="text-slate-400 text-xs uppercase">Completed</p>
-            <p className="text-xl font-semibold text-emerald-300">
-              {summary.completed}
-            </p>
-          </div>
-          <div className="card px-4 py-3 text-center">
-            <p className="text-slate-400 text-xs uppercase">Saved so far</p>
-            <p className="text-xl font-semibold text-blue-300">
-              {formatCurrency(summary.totalSaved)}
-            </p>
-          </div>
-          <div className="card px-4 py-3 text-center">
-            <p className="text-slate-400 text-xs uppercase">Total target</p>
-            <p className="text-xl font-semibold text-slate-200">
-              {formatCurrency(summary.totalTarget)}
-            </p>
-          </div>
         </div>
       </div>
 
-      <div className="card">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <h3 className="text-xl font-semibold text-white">Create a goal</h3>
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          icon={Target}
+          title="Active Goals"
+          subtitle={`${summary.active} Goals`}
+          color="primary"
+        />
+        <StatCard
+          icon={CheckCircle}
+          title="Completed"
+          subtitle={`${summary.completed} Goals`}
+          color="green"
+        />
+        <StatCard
+          icon={TrendingUp}
+          title="Saved So Far"
+          subtitle={formatCurrency(summary.totalSaved)}
+          color="blue"
+        />
+        <StatCard
+          icon={Flag}
+          title="Total Target"
+          subtitle={formatCurrency(summary.totalTarget)}
+          color="purple"
+        />
+      </div>
+
+      {/* Create Goal Form */}
+      <div className="card p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
+            <Plus size={20} className="text-primary" /> Create New Goal
+          </h3>
           <select
             className="input-field md:w-48"
             value={filters.status}
@@ -269,294 +259,224 @@ export default function GoalsPage() {
 
         <form
           onSubmit={handleCreateGoal}
-          className="grid grid-cols-1 md:grid-cols-6 gap-4"
+          className="grid grid-cols-1 md:grid-cols-12 gap-4"
         >
-          <input
-            className="input-field md:col-span-2"
-            placeholder="Goal title"
-            value={form.title}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, title: event.target.value }))
-            }
-            required
-          />
-          <input
-            className="input-field md:col-span-2"
-            placeholder="Category (optional)"
-            value={form.category}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, category: event.target.value }))
-            }
-          />
-          <input
-            className="input-field"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Target amount"
-            value={form.targetAmount}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, targetAmount: event.target.value }))
-            }
-            required
-          />
-          <input
-            className="input-field"
-            type="date"
-            value={form.deadline}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, deadline: event.target.value }))
-            }
-            required
-          />
-          <textarea
-            className="input-field md:col-span-4"
-            rows={2}
-            placeholder="Description (optional)"
-            value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
-          />
-          <button
-            type="submit"
-            className="btn-primary md:col-span-2"
-            disabled={creating}
-          >
-            {creating ? 'Saving...' : 'Create goal'}
-          </button>
+          <div className="md:col-span-4">
+            <input
+              className="input-field w-full"
+              placeholder="Goal Title"
+              value={form.title}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, title: event.target.value }))
+              }
+              required
+            />
+          </div>
+          <div className="md:col-span-3">
+            <input
+              className="input-field w-full"
+              placeholder="Category (e.g. Travel, Home)"
+              value={form.category}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, category: event.target.value }))
+              }
+            />
+          </div>
+          <div className="md:col-span-3">
+            <input
+              className="input-field w-full"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Target Amount"
+              value={form.targetAmount}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, targetAmount: event.target.value }))
+              }
+              required
+            />
+          </div>
+          <div className="md:col-span-2">
+            <input
+              className="input-field w-full"
+              type="date"
+              value={form.deadline}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, deadline: event.target.value }))
+              }
+              required
+            />
+          </div>
+          <div className="md:col-span-10">
+            <input
+              className="input-field w-full"
+              placeholder="Description (optional)"
+              value={form.description}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={creating}
+              disabled={creating}
+            >
+              Create Goal
+            </Button>
+          </div>
         </form>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 px-4 py-3">
+        <div className="p-4 rounded-full bg-error/10 border border-error/20 text-error text-sm">
           {error}
         </div>
       )}
 
+      {/* Goals List */}
       {loading ? (
         <div className="card text-center py-12">
-          <p className="text-slate-400 text-lg">Loading goals...</p>
+          <p className="text-text-secondary animate-pulse">Loading goals...</p>
         </div>
       ) : goals.length === 0 ? (
         <div className="card text-center py-16">
-          <p className="text-white font-semibold text-lg mb-2">
-            No goals to display
+          <div className="w-16 h-16 bg-surface-elevated rounded-full flex items-center justify-center mx-auto mb-4 text-text-secondary">
+            <Target size={32} />
+          </div>
+          <p className="text-text-primary font-bold text-lg mb-2">
+            No goals found
           </p>
-          <p className="text-slate-400">
+          <p className="text-text-secondary">
             Create a goal above to start tracking your progress.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {goals.map((goal) => {
             const progress = Math.min(Math.max(goal.progress || 0, 0), 100);
-            const daysRemaining =
-              goal.daysRemaining >= 0
-                ? `${goal.daysRemaining} days left`
-                : 'Past deadline';
-
+            const daysRemaining = goal.daysRemaining >= 0 ? `${goal.daysRemaining} days left` : 'Past deadline';
             const progressForm = progressForms[goal._id] || defaultProgressForm;
+            const isEditing = editingGoalId === goal._id;
 
             return (
               <div
                 key={goal._id}
-                className="card border border-slate-800/60 hover:border-blue-500/30 transition-all"
+                className={`card p-6 border transition-all ${isEditing ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/50'}`}
               >
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-2xl font-semibold text-white">
-                        {goal.title}
-                      </h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
-                          goal.status === 'completed'
-                            ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/40'
-                            : goal.status === 'active'
-                            ? 'bg-blue-500/10 text-blue-300 border border-blue-500/40'
-                            : 'bg-slate-500/10 text-slate-300 border border-slate-500/40'
-                        }`}
-                      >
-                        {goal.status}
-                      </span>
+                {isEditing ? (
+                  <form onSubmit={handleUpdateGoal} className="space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-bold text-text-primary">Edit Goal</h4>
+                      <button type="button" onClick={cancelEditing} className="text-text-secondary hover:text-text-primary"><X size={20} /></button>
                     </div>
-                    <p className="text-slate-400 mt-2">
-                      Target {formatCurrency(goal.targetAmount)} · Saved{' '}
-                      <span className="text-white font-medium">
-                        {formatCurrency(goal.currentAmount)}
-                      </span>
-                    </p>
-                    <p className="text-slate-500 text-sm mt-1">
-                      Deadline{' '}
-                      {new Date(goal.deadline).toLocaleDateString()} ·{' '}
-                      {daysRemaining}
-                    </p>
-                    {goal.description && (
-                      <p className="text-slate-400 mt-3">{goal.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => startEditingGoal(goal)}
-                      className="btn-ghost px-4 py-2 text-blue-300 border-blue-400/40 hover:border-blue-400 hover:text-blue-200"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteGoal(goal._id)}
-                      className="btn-ghost px-4 py-2 text-red-300 border-red-400/40 hover:border-red-400 hover:text-red-200"
-                      disabled={updatingGoalId === goal._id}
-                    >
-                      {updatingGoalId === goal._id ? 'Removing...' : 'Delete'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="w-full bg-slate-800/60 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-blue-400 to-cyan-400 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${progress}%` }}
+                    <input
+                      className="input-field w-full"
+                      placeholder="Title"
+                      value={editForm.title}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                      required
                     />
-                  </div>
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <p className="text-slate-400 text-sm">
-                      {progress}% complete · Remaining{' '}
-                      {formatCurrency(
-                        Math.max(goal.targetAmount - goal.currentAmount, 0)
-                      )}
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="input-field w-36"
-                          placeholder="Add amount"
-                          value={progressForm.amount}
-                          onChange={(event) =>
-                            handleProgressChange(goal._id, event.target.value)
-                          }
-                        />
-                        <button
-                          className="btn-primary px-4 py-3"
-                          onClick={() => handleUpdateProgress(goal._id)}
-                          disabled={updatingGoalId === goal._id}
-                        >
-                          {updatingGoalId === goal._id
-                            ? 'Updating...'
-                            : 'Update progress'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {editingGoalId === goal._id && (
-                  <div className="mt-6 border border-slate-800/60 rounded-xl p-5 bg-slate-900/40">
-                    <h4 className="text-lg font-semibold text-white mb-4">
-                      Edit goal
-                    </h4>
-                    <form
-                      onSubmit={handleUpdateGoal}
-                      className="grid grid-cols-1 md:grid-cols-6 gap-4"
-                    >
+                    <div className="grid grid-cols-2 gap-4">
                       <input
-                        className="input-field md:col-span-2"
-                        placeholder="Title"
-                        value={editForm.title}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            title: event.target.value,
-                          }))
-                        }
-                        required
-                      />
-                      <input
-                        className="input-field"
-                        placeholder="Category"
-                        value={editForm.category}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            category: event.target.value,
-                          }))
-                        }
-                      />
-                      <input
-                        className="input-field"
+                        className="input-field w-full"
                         type="number"
-                        min="0"
-                        step="0.01"
                         placeholder="Target"
                         value={editForm.targetAmount}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            targetAmount: event.target.value,
-                          }))
-                        }
+                        onChange={(e) => setEditForm(prev => ({ ...prev, targetAmount: e.target.value }))}
                       />
                       <input
-                        className="input-field"
+                        className="input-field w-full"
                         type="date"
                         value={editForm.deadline}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            deadline: event.target.value,
-                          }))
-                        }
+                        onChange={(e) => setEditForm(prev => ({ ...prev, deadline: e.target.value }))}
                       />
-                      <select
-                        className="input-field"
-                        value={editForm.status}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            status: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                        <option value="abandoned">Abandoned</option>
-                      </select>
-                      <textarea
-                        className="input-field md:col-span-6"
-                        rows={3}
-                        placeholder="Description"
-                        value={editForm.description}
-                        onChange={(event) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            description: event.target.value,
-                          }))
-                        }
-                      />
-                      <div className="flex items-center gap-3 md:col-span-6">
-                        <button
-                          type="submit"
-                          className="btn-primary"
-                          disabled={updatingGoalId === goal._id}
-                        >
-                          {updatingGoalId === goal._id
-                            ? 'Saving...'
-                            : 'Save goal'}
+                    </div>
+                    <select
+                      className="input-field w-full"
+                      value={editForm.status}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                    >
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="abandoned">Abandoned</option>
+                    </select>
+                    <div className="flex justify-end gap-3">
+                      <Button variant="ghost" onClick={cancelEditing} type="button">Cancel</Button>
+                      <Button type="submit" isLoading={updatingGoalId === goal._id}>Save Changes</Button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-xl font-bold text-text-primary">{goal.title}</h3>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${goal.status === 'completed' ? 'bg-success/10 text-success border-success/20' :
+                            goal.status === 'active' ? 'bg-primary/10 text-primary border-primary/20' :
+                              'bg-surface-elevated text-text-secondary border-border'
+                            }`}>
+                            {goal.status}
+                          </span>
+                        </div>
+                        <p className="text-text-secondary text-sm">{goal.category || 'General'}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => startEditingGoal(goal)} className="p-2 text-text-secondary hover:text-primary hover:bg-surface-elevated rounded-lg transition-colors">
+                          <Edit2 size={16} />
                         </button>
-                        <button
-                          type="button"
-                          className="btn-ghost px-4 py-3"
-                          onClick={cancelEditing}
-                        >
-                          Cancel
+                        <button onClick={() => handleDeleteGoal(goal._id)} className="p-2 text-text-secondary hover:text-error hover:bg-surface-elevated rounded-lg transition-colors">
+                          <Trash2 size={16} />
                         </button>
                       </div>
-                    </form>
-                  </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-text-secondary">Progress</span>
+                        <span className="font-bold text-text-primary">{progress}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-surface-elevated rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-success' : 'bg-primary'
+                            }`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs mt-2 text-text-secondary">
+                        <span>{formatCurrency(goal.currentAmount)} saved</span>
+                        <span>Target: {formatCurrency(goal.targetAmount)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="text-xs text-text-secondary flex items-center gap-1">
+                        <Flag size={12} />
+                        {daysRemaining}
+                      </div>
+
+                      {goal.status === 'active' && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            className="input-field py-1 px-2 w-24 text-sm h-8"
+                            placeholder="Add funds"
+                            value={progressForm.amount}
+                            onChange={(e) => handleProgressChange(goal._id, e.target.value)}
+                          />
+                          <button
+                            onClick={() => handleUpdateProgress(goal._id)}
+                            disabled={updatingGoalId === goal._id}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-background hover:bg-primary-dark transition-colors disabled:opacity-50"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             );

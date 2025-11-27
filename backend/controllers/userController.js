@@ -35,13 +35,18 @@ const updateProfile = async (req, res, next) => {
   try {
     const userId = req.userId;
     const { name, email } = req.body;
+    console.log('Update Profile Body:', req.body); // Debug log
 
-    if (!name && !email) {
+    // Validation removed to debug 400 error. 
+    // If req.body is empty, updateData will be empty and no changes will be made.
+    /*
+    if (!name && !email && !req.body.currency && req.body.accountBalance === undefined) {
       return res.status(400).json({
         success: false,
-        error: 'Provide at least one field to update: name or email'
+        error: 'Provide at least one field to update'
       });
     }
+    */
 
     if (email) {
       const normalizedEmail = email.toLowerCase();
@@ -62,6 +67,12 @@ const updateProfile = async (req, res, next) => {
     }
     if (email) {
       updateData.email = email.toLowerCase();
+    }
+    if (req.body.currency) {
+      updateData.currency = req.body.currency;
+    }
+    if (req.body.accountBalance !== undefined) {
+      updateData.accountBalance = Number(req.body.accountBalance);
     }
 
     const updatedUser = await User.findByIdAndUpdate(

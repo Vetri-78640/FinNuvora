@@ -44,6 +44,11 @@ const generateInsights = async (req, res, next) => {
       User.findById(userId)
     ]);
 
+    const userCurrency = user.currency || 'USD';
+    const currencySymbol = {
+      USD: '$', EUR: '€', GBP: '£', INR: '₹', JPY: '¥', CAD: 'C$', AUD: 'A$'
+    }[userCurrency] || '$';
+
     const stats = {
       totalIncome: 0,
       totalExpense: 0,
@@ -66,33 +71,41 @@ const generateInsights = async (req, res, next) => {
     });
 
     stats.netAmount = stats.totalIncome - stats.totalExpense;
-    stats.savingsRate = stats.totalIncome > 0 
-      ? Math.round(((stats.totalIncome - stats.totalExpense) / stats.totalIncome) * 100) 
+    stats.savingsRate = stats.totalIncome > 0
+      ? Math.round(((stats.totalIncome - stats.totalExpense) / stats.totalIncome) * 100)
       : 0;
 
     const prompt = `
-You are a personal finance advisor. Analyze the following financial data for user "${user.name}" and provide personalized insights and recommendations.
+You are an expert financial strategist focused on wealth building, saving, and investing. Analyze the financial data for user "${user.name}" (Currency: ${userCurrency}).
 
 Financial Summary:
-- Total Income: $${stats.totalIncome.toFixed(2)}
-- Total Expenses: $${stats.totalExpense.toFixed(2)}
-- Total Investment: $${stats.totalInvestment.toFixed(2)}
-- Net Amount (Income - Expenses): $${stats.netAmount.toFixed(2)}
+- Total Income: ${currencySymbol}${stats.totalIncome.toFixed(2)}
+- Total Expenses: ${currencySymbol}${stats.totalExpense.toFixed(2)}
+- Total Investment: ${currencySymbol}${stats.totalInvestment.toFixed(2)}
+- Net Amount: ${currencySymbol}${stats.netAmount.toFixed(2)}
 - Savings Rate: ${stats.savingsRate}%
 - Total Transactions: ${stats.transactionCount}
 
 Spending by Category:
 ${Object.entries(stats.byCategory)
-  .map(([cat, amounts]) => `- ${cat}: Income: $${amounts.income.toFixed(2)}, Expense: $${amounts.expense.toFixed(2)}, Investment: $${amounts.investment.toFixed(2)}`)
-  .join('\n')}
+        .map(([cat, amounts]) => `- ${cat}: Income: ${currencySymbol}${amounts.income.toFixed(2)}, Expense: ${currencySymbol}${amounts.expense.toFixed(2)}, Investment: ${currencySymbol}${amounts.investment.toFixed(2)}`)
+        .join('\n')}
 
-Please provide:
-1. Key insights about their financial health
-2. Top 3 areas where they're spending the most
-3. Specific, actionable recommendations to improve their financial situation
-4. Suggestions for better budgeting and savings
+Please provide a structured analysis in the following format:
 
-Keep the response concise, friendly, and specific to their financial data.
+### 💰 Financial Health Check
+[Brief assessment of their current status, focusing on savings rate and stability]
+
+### 📉 Spending Analysis
+[Identify top spending areas and potential leaks. Be direct but constructive]
+
+### 🚀 Wealth Building Opportunities
+[Specific, actionable advice on how to increase savings or investments based on their data]
+
+### 💡 Action Plan
+[3 bullet points of immediate actions they should take]
+
+Tone: Professional, encouraging, and focused on long-term wealth. Avoid generic advice; use the specific numbers provided.
     `;
 
     try {
@@ -109,26 +122,25 @@ Keep the response concise, friendly, and specific to their financial data.
     } catch (geminiErr) {
       // If Gemini fails, return stats with a fallback message
       const fallbackInsight = `
-Financial Overview for ${user.name}:
-
+### 📊 Financial Overview
 Your financial health shows:
-- Total Income: $${stats.totalIncome.toFixed(2)}
-- Total Expenses: $${stats.totalExpense.toFixed(2)}
+- Total Income: ${currencySymbol}${stats.totalIncome.toFixed(2)}
+- Total Expenses: ${currencySymbol}${stats.totalExpense.toFixed(2)}
 - Savings Rate: ${stats.savingsRate}%
 
-Top Spending Categories:
+### 📉 Top Spending Categories
 ${Object.entries(stats.byCategory)
-  .sort((a, b) => b[1].expense - a[1].expense)
-  .slice(0, 3)
-  .map(([cat, amounts]) => `- ${cat}: $${amounts.expense.toFixed(2)}`)
-  .join('\n')}
+          .sort((a, b) => b[1].expense - a[1].expense)
+          .slice(0, 3)
+          .map(([cat, amounts]) => `- ${cat}: ${currencySymbol}${amounts.expense.toFixed(2)}`)
+          .join('\n')}
 
-Key Recommendations:
+### 💡 Recommendations
 1. Review your top spending categories for optimization opportunities
 2. Maintain your savings rate by tracking monthly expenses
 3. Consider setting up automatic transfers to savings
 
-Note: AI insights are temporarily unavailable. Please check your API configuration.
+*Note: AI insights are temporarily unavailable. Please check your API configuration.*
       `;
 
       res.json({
