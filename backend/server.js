@@ -44,11 +44,11 @@ app.use(cors({
     // Strict Allow List:
     // 1. Localhost for development
     // 2. The exact FRONTEND_URL from env vars (Production)
-    // 3. Vercel Preview URLs that belong to THIS project (contain 'finnuvora')
+    // 3. Vercel Preview URLs that belong to THIS project (contain 'fin-nuvora')
     const isAllowed =
       origin === 'http://localhost:3000' ||
       origin === process.env.FRONTEND_URL ||
-      (origin.endsWith('.vercel.app') && origin.includes('finnuvora'));
+      (origin.endsWith('.vercel.app') && origin.includes('fin-nuvora'));
 
     if (isAllowed) {
       callback(null, true);
