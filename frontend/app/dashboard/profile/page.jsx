@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { userAPI, preferencesAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import { useTheme } from '@/lib/contexts/ThemeContext';
-import { User, Lock, Settings, Bell, Wallet } from 'lucide-react';
+import { User, Lock, Settings, Bell, Wallet, Check, ChevronDown } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useCurrency } from '@/lib/contexts/CurrencyContext';
 
@@ -12,23 +12,32 @@ export default function ProfilePage() {
   useProtectedRoute();
   const { setTheme } = useTheme();
 
-  const { currency, updateCurrency } = useCurrency();
+  const { currency, updateCurrency, convertAmount, convertToUSD } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [baseBalanceUSD, setBaseBalanceUSD] = useState(0);
+  const [baseLimitUSD, setBaseLimitUSD] = useState(600);
   const [profileForm, setProfileForm] = useState({
     name: '',
     email: '',
     accountBalance: '',
+    monthlyLimit: '',
+    profilePicture: null,
   });
+  // Custom dropdown state
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
   const [preferences, setPreferences] = useState({
-    theme: 'system',
-    currency: 'USD',
+    theme: 'dark',
+    currency: currency || 'USD',
     language: 'en',
     notifications: {
       priceAlert: false,
@@ -38,23 +47,56 @@ export default function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
-  const [availableCurrencies] = useState(['USD', 'EUR', 'GBP', 'JPY', 'INR']);
+  const [availableCurrencies] = useState([
+    'USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD',
+    'CNY', 'CHF', 'SGD', 'NZD', 'HKD', 'KRW', 'BRL', 'ZAR', 'RUB', 'MXN'
+  ]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsCurrencyOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Initialize profile picture from localStorage if available
+  useEffect(() => {
+    const savedPic = localStorage.getItem('profilePicture');
+    if (savedPic) {
+      setProfileForm(prev => ({ ...prev, profilePicture: savedPic }));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const user = await userAPI.getProfile();
+        const response = await userAPI.getProfile();
+        const user = response.data.user;
+
+        // Check local storage for profile picture first
+        const localPic = localStorage.getItem('profilePicture');
+
+        // Store base USD values
+        setBaseBalanceUSD(Number(user.accountBalance || 0));
+        setBaseLimitUSD(Number(user.monthlyLimit || 600));
+
         setProfileForm({
           name: user.name || '',
           email: user.email || '',
-          accountBalance: user.accountBalance || '',
+          accountBalance: '', // Will be updated by the currency effect
+          monthlyLimit: '', // Will be updated by the currency effect
+          profilePicture: localPic || user.profilePicture || null,
         });
 
         const prefs = await preferencesAPI.getPreferences();
         setPreferences({
-          theme: prefs.theme || 'system',
-          currency: prefs.currency || 'USD',
+          theme: prefs.theme || 'dark',
+          currency: currency || prefs.currency || 'USD', // Prefer context currency to avoid reversion
           language: prefs.language || 'en',
           notifications: {
             priceAlert: prefs.notifications?.priceAlert || false,
@@ -71,14 +113,65 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
+  // Update displayed balance when currency or base balance changes
+  useEffect(() => {
+    if (baseBalanceUSD !== undefined) {
+      const convertedBalance = convertAmount(baseBalanceUSD);
+      const convertedLimit = convertAmount(baseLimitUSD);
+
+      setProfileForm(prev => ({
+        ...prev,
+        accountBalance: convertedBalance.toFixed(2),
+        monthlyLimit: convertedLimit.toFixed(2)
+      }));
+    }
+  }, [currency, baseBalanceUSD, baseLimitUSD]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        localStorage.setItem('profilePicture', base64String);
+        window.dispatchEvent(new Event('profilePictureUpdated'));
+
+        setProfileForm(prev => ({
+          ...prev,
+          profilePicture: base64String
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
       setSavingProfile(true);
       setError('');
       setSuccess('');
-      await userAPI.updateProfile(profileForm);
+
+      // Convert displayed values back to USD for storage
+      const balanceInUSD = convertToUSD(Number(profileForm.accountBalance));
+      const limitInUSD = convertToUSD(Number(profileForm.monthlyLimit));
+
+      // Send as JSON
+      const payload = {
+        name: profileForm.name,
+        email: profileForm.email,
+        accountBalance: balanceInUSD,
+        monthlyLimit: limitInUSD
+      };
+
+      await userAPI.updateProfile(payload);
+
+      // Update base values so it doesn't jump
+      setBaseBalanceUSD(balanceInUSD);
+      setBaseLimitUSD(limitInUSD);
+
       setSuccess('Profile updated successfully');
+
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update profile');
     } finally {
@@ -125,7 +218,7 @@ export default function ProfilePage() {
       setTheme(preferences.theme);
 
       const payload = {
-        theme: preferences.theme,
+        theme: 'dark',
         currency: preferences.currency,
         language: preferences.language,
         notifications: {
@@ -152,22 +245,9 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary mb-2">Profile Settings</h1>
-        <p className="text-text-secondary">Manage your account settings and preferences.</p>
-      </div>
+      {/* ... (keep header and alerts) */}
 
-      {error && (
-        <div className="bg-error/10 border border-error/20 text-error p-4 rounded-full">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-success/10 border border-success/20 text-success p-4 rounded-full">
-          {success}
-        </div>
-      )}
+      {/* ... (keep error/success) */}
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Personal Information */}
@@ -177,6 +257,28 @@ export default function ProfilePage() {
             Personal Information
           </h2>
           <form onSubmit={handleSaveProfile} className="space-y-4">
+
+            {/* ... (keep profile picture upload) */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-24 h-24 rounded-full bg-surface-elevated border-2 border-primary/20 overflow-hidden mb-3 relative group">
+                {profileForm.profilePicture ? (
+                  <img
+                    src={profileForm.profilePicture.startsWith('data:') || profileForm.profilePicture.startsWith('blob:') ? profileForm.profilePicture : `${process.env.NEXT_PUBLIC_API_URL.replace('/api', '')}${profileForm.profilePicture}`}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                    <User size={32} />
+                  </div>
+                )}
+                <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <span className="text-white text-xs font-bold">Change</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </label>
+              </div>
+              <p className="text-xs text-text-secondary">Click to upload new picture</p>
+            </div>
             <div>
               <label className="text-text-secondary text-xs font-medium mb-1.5 block">Full Name</label>
               <input
@@ -197,19 +299,35 @@ export default function ProfilePage() {
                 placeholder="john@example.com"
               />
             </div>
-            <div>
-              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Account Balance</label>
-              <div className="relative">
-                <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
-                <input
-                  type="number"
-                  value={profileForm.accountBalance}
-                  onChange={(e) => setProfileForm({ ...profileForm, accountBalance: e.target.value })}
-                  className="input-field w-full pl-10"
-                  placeholder="0.00"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-text-secondary text-xs font-medium mb-1.5 block">Account Balance</label>
+                <div className="relative">
+                  <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                  <input
+                    type="number"
+                    value={profileForm.accountBalance}
+                    onChange={(e) => setProfileForm({ ...profileForm, accountBalance: e.target.value })}
+                    className="input-field w-full pl-10"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="text-xs text-text-secondary mt-1">Initial balance.</p>
               </div>
-              <p className="text-xs text-text-secondary mt-1">Initial balance for your account.</p>
+              <div>
+                <label className="text-text-secondary text-xs font-medium mb-1.5 block">Monthly Limit</label>
+                <div className="relative">
+                  <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                  <input
+                    type="number"
+                    value={profileForm.monthlyLimit}
+                    onChange={(e) => setProfileForm({ ...profileForm, monthlyLimit: e.target.value })}
+                    className="input-field w-full pl-10"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="text-xs text-text-secondary mt-1">Spending cap.</p>
+              </div>
             </div>
             <Button
               type="submit"
@@ -275,60 +393,75 @@ export default function ProfilePage() {
             App Preferences
           </h2>
           <form onSubmit={handleSavePreferences} className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-text-secondary text-xs font-medium mb-1.5 block">Theme</label>
-              <select
-                value={preferences.theme}
-                onChange={(e) => setPreferences({ ...preferences, theme: e.target.value })}
-                className="input-field w-full"
-              >
-                <option value="dark">Dark Mode</option>
-                <option value="light">Light Mode</option>
-                <option value="system">System Default</option>
-              </select>
-            </div>
+
             <div>
               <label className="text-text-secondary text-xs font-medium mb-1.5 block">Currency</label>
-              <select
-                value={preferences.currency}
-                onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
-                className="input-field w-full"
-              >
-                {availableCurrencies.map((curr) => (
-                  <option key={curr} value={curr}>
-                    {curr}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
+                  className="w-full flex items-center justify-between bg-[#121212] border border-white/10 rounded-xl px-4 py-3 text-white hover:border-primary transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-white font-medium">{preferences.currency}</span>
+                  </span>
+                  <ChevronDown size={16} className={`transition-transform text-text-secondary ${isCurrencyOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isCurrencyOpen && (
+                  <div className="absolute z-10 w-full mt-2 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+                    {availableCurrencies.map((curr) => (
+                      <button
+                        key={curr}
+                        type="button"
+                        onClick={() => {
+                          setPreferences({ ...preferences, currency: curr });
+                          setIsCurrencyOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
+                      >
+                        <span className="text-white text-sm">{curr}</span>
+                        {preferences.currency === curr && <Check size={16} className="text-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="text-text-secondary text-xs font-medium mb-4 block flex items-center gap-2">
                 <Bell size={16} /> Notifications
               </label>
               <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-full border border-border hover:border-primary/50 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={preferences.notifications.priceAlert}
-                    onChange={(e) => setPreferences({
-                      ...preferences,
-                      notifications: { ...preferences.notifications, priceAlert: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-border bg-surface-elevated text-primary focus:ring-primary focus:ring-offset-surface"
-                  />
-                  <span className="text-text-secondary group-hover:text-text-primary transition-colors">Price Alerts</span>
+                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border border-white/5 bg-surface hover:border-primary/50 transition-all">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={preferences.notifications.priceAlert}
+                      onChange={(e) => setPreferences({
+                        ...preferences,
+                        notifications: { ...preferences.notifications, priceAlert: e.target.checked }
+                      })}
+                      className="peer appearance-none w-6 h-6 rounded-lg border border-white/20 bg-black/50 checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                    />
+                    <Check size={14} className="absolute text-black opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
+                  </div>
+                  <span className="text-text-secondary group-hover:text-text-primary transition-colors font-medium">Price Alerts</span>
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-full border border-border hover:border-primary/50 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={preferences.notifications.portfolioUpdate}
-                    onChange={(e) => setPreferences({
-                      ...preferences,
-                      notifications: { ...preferences.notifications, portfolioUpdate: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-border bg-surface-elevated text-primary focus:ring-primary focus:ring-offset-surface"
-                  />
-                  <span className="text-text-secondary group-hover:text-text-primary transition-colors">Portfolio Updates</span>
+                <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border border-white/5 bg-surface hover:border-primary/50 transition-all">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={preferences.notifications.portfolioUpdate}
+                      onChange={(e) => setPreferences({
+                        ...preferences,
+                        notifications: { ...preferences.notifications, portfolioUpdate: e.target.checked }
+                      })}
+                      className="peer appearance-none w-6 h-6 rounded-lg border border-white/20 bg-black/50 checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                    />
+                    <Check size={14} className="absolute text-black opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
+                  </div>
+                  <span className="text-text-secondary group-hover:text-text-primary transition-colors font-medium">Portfolio Updates</span>
                 </label>
               </div>
             </div>

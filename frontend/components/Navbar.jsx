@@ -67,13 +67,13 @@ export default function Navbar() {
           <div className="w-px h-6 bg-border" />
 
           <div className="flex items-center gap-4">
-            <button
+            {/* <button
               onClick={toggleTheme}
               className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            </button> */}
 
             {isAuthenticated ? (
               <>
@@ -127,7 +127,7 @@ export default function Navbar() {
           </Link>
           <div className="h-px bg-border my-2" />
 
-          <div className="flex items-center justify-between py-2">
+          {/* <div className="flex items-center justify-between py-2">
             <span className="text-text-secondary">Theme</span>
             <button
               onClick={toggleTheme}
@@ -135,7 +135,7 @@ export default function Navbar() {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-          </div>
+          </div> */}
 
           {isAuthenticated ? (
             <div className="flex flex-col gap-3 mt-2">

@@ -6,9 +6,10 @@ import {
   categoryAPI,
 } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, Upload, Plus, Filter, Search, X } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, Upload, Plus, Filter, Search, X, Loader2, Trash2 } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import Button from '@/components/ui/Button';
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
 
 const defaultFilters = {
   search: '',
@@ -30,13 +31,6 @@ const defaultForm = {
   date: new Date().toISOString().slice(0, 10),
 };
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
-
 const typeLabels = {
   income: 'Income',
   expense: 'Expense',
@@ -45,6 +39,7 @@ const typeLabels = {
 
 export default function TransactionsPage() {
   useProtectedRoute();
+  const { formatCurrency, convertToUSD } = useCurrency();
 
   const [filters, setFilters] = useState(defaultFilters);
   const [transactions, setTransactions] = useState([]);
@@ -57,6 +52,7 @@ export default function TransactionsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [form, setForm] = useState(defaultForm);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -64,6 +60,7 @@ export default function TransactionsPage() {
   const [submittingEdit, setSubmittingEdit] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const loadCategories = useCallback(async () => {
     try {
@@ -95,6 +92,8 @@ export default function TransactionsPage() {
           limit: filters.limit,
         }
       );
+      // Clear selection when filters change or page changes
+      setSelectedIds(new Set());
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -125,6 +124,44 @@ export default function TransactionsPage() {
     setFilters(defaultFilters);
   };
 
+  const toggleSelection = (id) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map(t => t._id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    // Optional: confirm for bulk delete as it's a big action
+    if (!window.confirm(`Delete ${selectedIds.size} transactions?`)) return;
+
+    try {
+      await transactionAPI.bulkDelete(Array.from(selectedIds));
+      setSuccess(`${selectedIds.size} transactions deleted successfully`);
+      setSelectedIds(new Set());
+      await loadTransactions();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+        'Failed to delete transactions. Please try again.'
+      );
+    }
+  };
+
   const handleCreateTransaction = async (event) => {
     event.preventDefault();
 
@@ -136,6 +173,7 @@ export default function TransactionsPage() {
     try {
       setCreating(true);
       setError('');
+      setSuccess('');
       await transactionAPI.createTransaction({
         ...form,
         amount: Number(form.amount),
@@ -150,6 +188,9 @@ export default function TransactionsPage() {
         ...prev,
         page: 1,
       }));
+
+      setSuccess('Transaction added successfully');
+      setTimeout(() => setSuccess(''), 3000);
 
       await loadTransactions();
     } catch (err) {
@@ -187,6 +228,7 @@ export default function TransactionsPage() {
     try {
       setSubmittingEdit(true);
       setError('');
+      setSuccess('');
 
       await transactionAPI.updateTransaction(editingId, {
         ...editingForm,
@@ -194,6 +236,8 @@ export default function TransactionsPage() {
       });
 
       cancelEditing();
+      setSuccess('Transaction updated successfully');
+      setTimeout(() => setSuccess(''), 3000);
       await loadTransactions();
     } catch (err) {
       setError(
@@ -206,11 +250,10 @@ export default function TransactionsPage() {
   };
 
   const handleDeleteTransaction = async (transactionId) => {
-    const confirmed = window.confirm('Delete this transaction?');
-    if (!confirmed) return;
-
     try {
       await transactionAPI.deleteTransaction(transactionId);
+      setSuccess('Transaction deleted successfully');
+      setTimeout(() => setSuccess(''), 3000);
       await loadTransactions();
     } catch (err) {
       setError(
@@ -226,21 +269,27 @@ export default function TransactionsPage() {
 
     setUploading(true);
     setError('');
+    setSuccess('');
 
     try {
       const formData = new FormData();
       formData.append('pdf', file);
 
+      // Calculate conversion rate (User Currency -> USD)
+      const conversionRate = convertToUSD(1);
+      formData.append('conversionRate', conversionRate);
+
       const response = await transactionAPI.uploadPDF(formData);
-      if (response.success) {
+      if (response.data.success) {
         await loadTransactions();
+        setSuccess(response.data.message || 'Transactions imported successfully');
         event.target.value = ''; // Reset file input
+        setTimeout(() => setSuccess(''), 5000);
       }
     } catch (err) {
-      setError(
-        err.response?.data?.error ||
-        'Failed to upload PDF. Please try again.'
-      );
+      console.error('Upload error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to upload PDF';
+      setError(`Error: ${errorMessage} (Status: ${err.response?.status || 'Unknown'})`);
     } finally {
       setUploading(false);
     }
@@ -276,6 +325,15 @@ export default function TransactionsPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-colors text-sm font-medium"
+            >
+              <Trash2 size={18} />
+              Delete ({selectedIds.size})
+            </button>
+          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-6 py-3 bg-[#1C1C1E] rounded-full text-white hover:bg-white/10 transition-colors text-sm font-medium"
@@ -283,9 +341,9 @@ export default function TransactionsPage() {
             <Filter size={18} />
             Filters
           </button>
-          <label className="flex items-center gap-2 px-6 py-3 bg-yellow-400 rounded-full text-black hover:bg-yellow-500 transition-colors text-sm font-bold cursor-pointer">
-            <Upload size={18} />
-            <span>Import PDF</span>
+          <label className={`flex items-center gap-2 px-6 py-3 bg-yellow-400 rounded-full text-black hover:bg-yellow-500 transition-colors text-sm font-bold cursor-pointer ${uploading ? 'opacity-70 cursor-wait' : ''}`}>
+            {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            <span>{uploading ? 'Parsing...' : 'Import PDF'}</span>
             <input
               type="file"
               accept=".pdf"
@@ -482,12 +540,26 @@ export default function TransactionsPage() {
         </div>
       )}
 
+      {success && (
+        <div className="p-4 rounded-full bg-success/10 border border-success/20 text-success text-sm flex items-center gap-2 animate-in slide-in-from-top-2 fade-in">
+          <TrendingUp size={16} /> {success}
+        </div>
+      )}
+
       {/* Transactions Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-surface-elevated/50">
+                <th className="py-4 px-6 w-10">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-800/50 text-yellow-500 focus:ring-yellow-500/50 focus:ring-offset-0 cursor-pointer accent-yellow-500"
+                    checked={transactions.length > 0 && selectedIds.size === transactions.length}
+                    onChange={toggleAll}
+                  />
+                </th>
                 <th className="py-4 px-6 text-xs font-semibold uppercase tracking-wider text-text-secondary">Date</th>
                 <th className="py-4 px-6 text-xs font-semibold uppercase tracking-wider text-text-secondary">Category</th>
                 <th className="py-4 px-6 text-xs font-semibold uppercase tracking-wider text-text-secondary">Type</th>
@@ -499,7 +571,7 @@ export default function TransactionsPage() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="py-12 text-center text-text-secondary">
+                  <td colSpan="7" className="py-12 text-center text-text-secondary">
                     <div className="animate-pulse flex flex-col items-center">
                       <div className="h-4 w-32 bg-surface-elevated rounded mb-2"></div>
                       <div className="h-3 w-24 bg-surface-elevated rounded"></div>
@@ -508,13 +580,21 @@ export default function TransactionsPage() {
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-12 text-center text-text-secondary">
+                  <td colSpan="7" className="py-12 text-center text-text-secondary">
                     No transactions found matching your criteria.
                   </td>
                 </tr>
               ) : (
                 transactions.map((transaction) => (
-                  <tr key={transaction._id} className="group hover:bg-surface-elevated/50 transition-colors">
+                  <tr key={transaction._id} className={`group hover:bg-surface-elevated/50 transition-colors ${selectedIds.has(transaction._id) ? 'bg-yellow-500/5' : ''}`}>
+                    <td className="py-4 px-6">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-800/50 text-yellow-500 focus:ring-yellow-500/50 focus:ring-offset-0 cursor-pointer accent-yellow-500"
+                        checked={selectedIds.has(transaction._id)}
+                        onChange={() => toggleSelection(transaction._id)}
+                      />
+                    </td>
                     <td className="py-4 px-6 text-sm text-text-primary">
                       {new Date(transaction.date).toLocaleDateString()}
                     </td>

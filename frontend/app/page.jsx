@@ -44,7 +44,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6 relative overflow-hidden">
         {/* Background Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
         <div className="max-w-5xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium animate-fade-in">
@@ -52,7 +52,7 @@ export default function LandingPage() {
             Now in Early Access
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight animate-slide-in">
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-tight animate-slide-in">
             Master your wealth with<br />
             <span className="text-primary">intelligent insights</span>
           </h1>
@@ -81,13 +81,13 @@ export default function LandingPage() {
 
       {/* Feature Highlight 1 */}
       <section className="py-24 px-6 relative">
-        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -z-10" />
+        <div className="absolute top-1/2 left-0 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-blue-500/10 rounded-full blur-[100px] -z-10" />
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 space-y-6">
             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
               <PieChart size={24} />
             </div>
-            <h2 className="text-4xl font-bold">See everything in one place</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">See everything in one place</h2>
             <p className="text-text-secondary text-lg leading-relaxed">
               Connect all your bank accounts, credit cards, and investment portfolios. FinNuvora aggregates your data to give you a complete, real-time picture of your net worth.
             </p>
@@ -97,12 +97,12 @@ export default function LandingPage() {
               <CheckItem text="Real Estate & Manual Assets" />
             </ul>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             {/* Grid Mock UI */}
-            <div className="grid grid-cols-2 gap-4 p-6 bg-[#121212] border border-white/10 rounded-3xl shadow-2xl group hover:border-blue-500/30 transition-colors">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 bg-[#121212] border border-white/10 rounded-3xl shadow-2xl group hover:border-blue-500/30 transition-colors">
 
               {/* Total Net Worth (Full Width) */}
-              <div className="col-span-2 bg-surface-elevated rounded-2xl p-5 border border-white/5 flex justify-between items-center">
+              <div className="col-span-1 sm:col-span-2 bg-surface-elevated rounded-2xl p-5 border border-white/5 flex justify-between items-center">
                 <div>
                   <div className="text-text-secondary text-xs font-medium uppercase tracking-wider mb-1">Account Balance</div>
                   <div className="text-3xl font-bold text-white">$142,893</div>
@@ -127,7 +127,7 @@ export default function LandingPage() {
               </div>
 
               {/* Top Asset (Full Width) */}
-              <div className="col-span-2 bg-surface-elevated rounded-2xl p-5 border border-white/5 flex items-center gap-4">
+              <div className="col-span-1 sm:col-span-2 bg-surface-elevated rounded-2xl p-5 border border-white/5 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
                   <Cpu size={20} />
                 </div>
@@ -148,13 +148,13 @@ export default function LandingPage() {
 
       {/* Feature Highlight 2 */}
       <section className="py-24 px-6 relative">
-        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] -z-10" />
+        <div className="absolute top-1/2 right-0 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-primary/10 rounded-full blur-[100px] -z-10" />
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row-reverse items-center gap-16">
           <div className="flex-1 space-y-6">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
               <Zap size={24} />
             </div>
-            <h2 className="text-4xl font-bold">AI that works for you</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">AI that works for you</h2>
             <p className="text-text-secondary text-lg leading-relaxed">
               Stop guessing with your money. Our advanced AI analyzes your spending habits and market trends to provide actionable advice that helps you grow your wealth.
             </p>
@@ -250,7 +250,7 @@ export default function LandingPage() {
       <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight">Start your financial revolution.</h2>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight">Start your financial revolution.</h2>
           <p className="text-xl text-text-secondary mb-12 max-w-2xl mx-auto">
             Join thousands of users who have already taken control of their financial future with FinNuvora.
           </p>

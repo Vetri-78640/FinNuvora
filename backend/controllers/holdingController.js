@@ -277,7 +277,7 @@ const { parseHoldingFromText } = require('../utils/aiParser');
 
 const smartAddHolding = async (req, res, next) => {
     try {
-        const { text, portfolioId } = req.body;
+        const { text, portfolioId, conversionRate = 1 } = req.body;
         const userId = req.userId;
 
         if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -332,8 +332,8 @@ const smartAddHolding = async (req, res, next) => {
             portfolio: portfolio._id,
             symbol: parsedHolding.symbol.toUpperCase(),
             quantity: parseFloat(parsedHolding.quantity),
-            buyPrice: parseFloat(parsedHolding.buyPrice),
-            currentPrice: parseFloat(parsedHolding.buyPrice), // Assume current price is buy price initially
+            buyPrice: parseFloat(parsedHolding.buyPrice) * conversionRate,
+            currentPrice: parseFloat(parsedHolding.buyPrice) * conversionRate, // Assume current price is buy price initially
             purchaseDate: new Date(parsedHolding.purchaseDate)
         });
 

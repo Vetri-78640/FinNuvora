@@ -1,3 +1,4 @@
+const path = require('path');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -26,6 +27,8 @@ app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
 }));
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Security headers
 app.use((req, res, next) => {

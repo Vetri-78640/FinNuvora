@@ -35,7 +35,7 @@ const transactionSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ['bank_statement', 'manual'],
+      enum: ['bank_statement', 'manual', 'bank_statement_ai', 'smart_add'],
       default: 'manual',
       index: true,
     },

@@ -15,7 +15,7 @@ import {
     CartesianGrid
 } from 'recharts';
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
+const COLORS = ['#FCD34D', '#F59E0B', '#D97706', '#FFFFFF', '#9CA3AF', '#4B5563'];
 
 const formatCurrency = (value) =>
     new Intl.NumberFormat('en-US', {
@@ -88,7 +88,7 @@ export default function PortfolioChart({ portfolios }) {
                                 formatter={(value) => formatCurrency(value)}
                                 cursor={{ fill: '#334155', opacity: 0.2 }}
                             />
-                            <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="value" fill="#FCD34D" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

@@ -1,13 +1,11 @@
 const mongoose = require('mongoose');
 const pdfParse = require('pdf-parse');
+const fs = require('fs');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 
-/**
- * Parse transaction text from PDF
- * Expected format: DATE DESCRIPTION AMOUNT
- * Example: 2024-01-15 Starbucks Coffee -25.50
- */
+// ... (keep existing parseTransactionFromText)
+
 const parseTransactionFromText = (lines) => {
   const transactions = [];
 
@@ -104,9 +102,28 @@ const updateUserBalance = async (userId, amount, type, isreversal = false) => {
   });
 };
 
+const path = require('path');
+
+const logToFile = (message) => {
+  try {
+    const logPath = path.join(__dirname, '../upload_debug.log');
+    const logMessage = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${logMessage}\n`);
+  } catch (e) {
+    console.error('Failed to write to log file', e);
+  }
+};
+
 const uploadTransaction = async (req, res, next) => {
   try {
+    logToFile({
+      event: 'PDF Upload Start',
+      files: req.files ? Object.keys(req.files) : 'No files',
+      body: req.body
+    });
+
     if (!req.files || !req.files.pdf) {
+      logToFile('Error: No PDF file uploaded');
       return res.status(400).json({
         success: false,
         error: 'No PDF file uploaded'
@@ -116,6 +133,7 @@ const uploadTransaction = async (req, res, next) => {
     const userId = req.userId;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
+      logToFile('Error: Invalid userId');
       return res.status(401).json({
         success: false,
         error: 'Invalid or expired session. Please login again.'
@@ -123,9 +141,42 @@ const uploadTransaction = async (req, res, next) => {
     }
 
     const pdfFile = req.files.pdf;
+    logToFile({
+      name: pdfFile.name,
+      size: pdfFile.size,
+      tempFilePath: pdfFile.tempFilePath,
+      dataLength: pdfFile.data ? pdfFile.data.length : 0
+    });
+
+    let dataBuffer = pdfFile.data;
+
+    // If using temp files, data might be empty, read from temp path
+    if ((!dataBuffer || dataBuffer.length === 0) && pdfFile.tempFilePath) {
+      logToFile(`Reading PDF from temp file: ${pdfFile.tempFilePath}`);
+      dataBuffer = fs.readFileSync(pdfFile.tempFilePath);
+    }
+
+    if (!dataBuffer || dataBuffer.length === 0) {
+      logToFile('Error: Empty file buffer');
+      return res.status(400).json({
+        success: false,
+        error: 'Empty file uploaded or failed to read temp file'
+      });
+    }
+
+    console.log('Request Body:', req.body);
+    let { conversionRate = 1 } = req.body;
+    console.log('Raw conversionRate:', conversionRate);
+    logToFile(`Raw conversionRate: ${conversionRate}`);
+
+    conversionRate = parseFloat(conversionRate);
+    if (isNaN(conversionRate)) conversionRate = 1;
+
+    console.log('Parsed conversionRate:', conversionRate);
+    logToFile(`Parsed conversionRate: ${conversionRate}`);
 
     // Parse PDF
-    const pdfData = await pdfParse(pdfFile.data);
+    const pdfData = await pdfParse(dataBuffer);
 
     // Use AI to parse transactions
     const parsedTransactions = await parseTransactionsFromText(pdfData.text);
@@ -156,7 +207,7 @@ const uploadTransaction = async (req, res, next) => {
       category: defaultCategory._id,
       date: new Date(t.date),
       description: t.description,
-      amount: Math.abs(t.amount),
+      amount: Math.abs(t.amount) * conversionRate,
       type: t.type || (t.amount > 0 ? 'income' : 'expense'),
       source: 'bank_statement_ai',
     }));
@@ -176,9 +227,14 @@ const uploadTransaction = async (req, res, next) => {
       message: `${savedTransactions.length} transactions imported successfully`,
       transactions: savedTransactions,
     });
-  } catch (error) {
-    console.error('Transaction upload error:', error);
-    next(error);
+  } catch (err) {
+    console.error('PDF Upload Error:', err);
+    logToFile({
+      event: 'PDF Upload Error',
+      error: err.message,
+      stack: err.stack
+    });
+    next(err);
   }
 };
 
@@ -694,6 +750,58 @@ const detectRecurring = async (req, res, next) => {
   }
 };
 
+const bulkDeleteTransactions = async (req, res, next) => {
+  try {
+    const { transactionIds } = req.body;
+    const userId = req.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please login again.'
+      });
+    }
+
+    if (!Array.isArray(transactionIds) || transactionIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No transactions selected'
+      });
+    }
+
+    // Find transactions to verify ownership and revert balances
+    const transactions = await Transaction.find({
+      _id: { $in: transactionIds },
+      user: userId
+    });
+
+    if (transactions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No transactions found to delete'
+      });
+    }
+
+    // Revert balances
+    for (const t of transactions) {
+      await updateUserBalance(userId, t.amount, t.type, true);
+    }
+
+    // Delete transactions
+    await Transaction.deleteMany({
+      _id: { $in: transactionIds },
+      user: userId
+    });
+
+    res.json({
+      success: true,
+      message: `${transactions.length} transactions deleted successfully`
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   uploadTransaction,
   createTransaction,
@@ -703,5 +811,6 @@ module.exports = {
   getTransactionStats,
   smartAddTransaction,
   scanReceipt,
-  detectRecurring
+  detectRecurring,
+  bulkDeleteTransactions
 };

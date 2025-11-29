@@ -28,11 +28,19 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    monthlyLimit: {
+      type: Number,
+      default: 600, // Default ~$50,000 INR
+    },
     plaidAccessToken: {
       type: String,
       default: null,
     },
     plaidItemId: {
+      type: String,
+      default: null,
+    },
+    profilePicture: {
       type: String,
       default: null,
     },

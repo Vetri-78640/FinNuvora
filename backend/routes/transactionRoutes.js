@@ -15,5 +15,6 @@ router.get('/', getTransactions);
 router.get('/stats/summary', getTransactionStats);
 router.put('/:id', updateTransaction);
 router.delete('/:id', deleteTransaction);
+router.post('/bulk-delete', require('../controllers/transactionController').bulkDeleteTransactions);
 
 module.exports = router;

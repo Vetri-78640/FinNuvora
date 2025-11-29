@@ -24,9 +24,8 @@ export default function SmartAddInput({ onAdd, disabled }) {
 
     return (
         <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
             <form onSubmit={handleSubmit} className="relative flex items-center bg-[#0E1324] rounded-full border border-slate-800 p-1.5">
-                <div className="pl-3 pr-2 text-blue-400">
+                <div className="pl-3 pr-2 text-yellow-400">
                     <Sparkles size={18} />
                 </div>
                 <input
@@ -40,7 +39,7 @@ export default function SmartAddInput({ onAdd, disabled }) {
                 <button
                     type="submit"
                     disabled={disabled || loading || !text.trim()}
-                    className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
                 </button>

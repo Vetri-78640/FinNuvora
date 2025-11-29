@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const path = require('path');
+const fs = require('fs');
 
 const getProfile = async (req, res, next) => {
   try {
@@ -73,6 +75,38 @@ const updateProfile = async (req, res, next) => {
     }
     if (req.body.accountBalance !== undefined) {
       updateData.accountBalance = Number(req.body.accountBalance);
+    }
+    if (req.body.monthlyLimit !== undefined) {
+      updateData.monthlyLimit = Number(req.body.monthlyLimit);
+    }
+
+    // Handle Profile Picture Upload
+    if (req.files && req.files.profilePicture) {
+      const file = req.files.profilePicture;
+
+      // Validate file type
+      if (!file.mimetype.startsWith('image/')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please upload an image file'
+        });
+      }
+
+      // Create uploads directory if not exists
+      const uploadDir = path.join(__dirname, '../uploads/profiles');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Generate unique filename
+      const fileName = `user_${userId}_${Date.now()}${path.extname(file.name)}`;
+      const uploadPath = path.join(uploadDir, fileName);
+
+      // Move file
+      await file.mv(uploadPath);
+
+      // Set URL path
+      updateData.profilePicture = `/uploads/profiles/${fileName}`;
     }
 
     const updatedUser = await User.findByIdAndUpdate(

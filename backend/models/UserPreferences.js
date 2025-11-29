@@ -11,17 +11,17 @@ const userPreferencesSchema = new mongoose.Schema({
     theme: {
         type: String,
         enum: ['light', 'dark'],
-        default: 'light'
+        default: 'dark'
     },
     notifications: {
         priceAlert: {
-                type: Boolean,
-                default: true
-            },
+            type: Boolean,
+            default: true
+        },
         portfolioUpdate: {
-                type: Boolean,
-                default: true
-            }
+            type: Boolean,
+            default: true
+        }
     },
     currency: {
         type: String,

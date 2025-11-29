@@ -68,6 +68,7 @@ export const transactionAPI = {
   smartAdd: (text) => api.post('/transactions/smart-add', { text }),
   updateTransaction: (id, data) => api.put(`/transactions/${id}`, data),
   deleteTransaction: (id) => api.delete(`/transactions/${id}`),
+  bulkDelete: (transactionIds) => api.post('/transactions/bulk-delete', { transactionIds }),
   getStats: (params) => api.get('/transactions/stats/summary', { params }),
   uploadPDF: (formData) => api.post('/transactions/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -103,7 +104,7 @@ export const stockAPI = {
   getQuote: (symbol) => api.get(`/stocks/quote/${symbol}`),
   getDaily: (symbol, outputsize) =>
     api.get(`/stocks/daily/${symbol}`, { params: { outputsize } }),
-  getBatch: (symbols) => api.get(`/stocks/batch?symbols=${symbols}`),
+  getBatch: (symbols) => api.post('/stocks/batch', { symbols }),
   search: (query) => api.get(`/stocks/search?query=${query}`)
 };
 
@@ -126,7 +127,7 @@ export const holdingAPI = {
     api.get(`/holding/portfolio/${portfolioId}`),
   getHolding: (id) => api.get(`/holding/${id}`),
   createHolding: (data) => api.post('/holding', data),
-  smartAdd: (text, portfolioId) => api.post('/holding/smart-add', { text, portfolioId }),
+  smartAdd: (text, portfolioId, conversionRate) => api.post('/holding/smart-add', { text, portfolioId, conversionRate }),
   updateHolding: (id, data) => api.put(`/holding/${id}`, data),
   deleteHolding: (id) => api.delete(`/holding/${id}`)
 };

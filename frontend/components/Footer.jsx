@@ -36,10 +36,10 @@ export default function Footer() {
                         © {new Date().getFullYear()} FinNuvora. All rights reserved.
                     </p>
                     <div className="flex items-center gap-8">
-                        <Link href="#privacy" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">
+                        <Link href="/privacy" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">
                             Privacy Policy
                         </Link>
-                        <Link href="#terms" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">
+                        <Link href="/terms" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">
                             Terms of Service
                         </Link>
                         <div className="flex items-center gap-2">

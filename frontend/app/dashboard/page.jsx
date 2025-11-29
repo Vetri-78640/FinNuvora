@@ -21,16 +21,11 @@ import ExpenditureChart from '@/components/dashboard/ExpenditureChart';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import { transactionAPI, portfolioAPI, userAPI } from '@/lib/api';
 import Link from 'next/link';
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
+import { useCurrency } from '@/lib/contexts/CurrencyContext';
 
 export default function DashboardPage() {
   useProtectedRoute();
+  const { formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
@@ -67,7 +62,7 @@ export default function DashboardPage() {
           income,
           expense,
           investment,
-          balance: userRes.accountBalance || 0
+          balance: userRes.data.user.accountBalance || 0
         });
 
       } catch (error) {
@@ -140,7 +135,7 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-            <ExpenditureChart />
+            <ExpenditureChart transactions={transactions} />
             <div className="flex justify-between items-center mt-6 px-2">
               <div className="text-2xl font-bold text-white">{formatCurrency(stats.expense)}</div>
               <div className="text-xs text-gray-400">Total expenses this period</div>
@@ -257,11 +252,18 @@ export default function DashboardPage() {
                 <span className="text-gray-400">Monthly Spending Limit</span>
               </div>
               <div className="w-full h-12 bg-[#2C2C2E] rounded-full p-1 flex items-center relative">
-                <div className="h-full bg-white rounded-full" style={{ width: `${Math.min((stats.expense / 5000) * 100, 100)}%` }} />
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min((stats.expense / (userProfile?.data?.user?.monthlyLimit || 600)) * 100, 100)}%`
+                  }}
+                />
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="font-bold text-white">{formatCurrency(stats.expense)}</span>
-                <span className="text-[10px] text-gray-500">of $5,000.00 limit</span>
+                <span className="text-[10px] text-gray-500">
+                  of {formatCurrency(userProfile?.data?.user?.monthlyLimit || 600)} limit
+                </span>
               </div>
             </div>
           </div>

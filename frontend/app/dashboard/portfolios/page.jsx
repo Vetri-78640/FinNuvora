@@ -25,7 +25,7 @@ const createEmptyHoldingForm = () => ({
 
 export default function PortfoliosPage() {
   useProtectedRoute();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, convertToUSD } = useCurrency();
 
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -190,12 +190,17 @@ export default function PortfoliosPage() {
     try {
       setSavingPortfolioId(portfolioId);
       setError('');
+
+      // Convert to USD for storage
+      const buyPriceUSD = convertToUSD(Number(buyPrice));
+      const currentPriceUSD = convertToUSD(Number(currentPrice));
+
       const { data } = await holdingAPI.createHolding({
         portfolioId,
         symbol,
         quantity: Number(quantity),
-        buyPrice: Number(buyPrice),
-        currentPrice: Number(currentPrice),
+        buyPrice: buyPriceUSD,
+        currentPrice: currentPriceUSD,
       });
 
       setPortfolios((prev) =>
@@ -226,7 +231,8 @@ export default function PortfoliosPage() {
   const handleSmartAdd = async (text, portfolioId) => {
     try {
       setError('');
-      const { data } = await holdingAPI.smartAdd(text, portfolioId);
+      const conversionRate = convertToUSD(1);
+      const { data } = await holdingAPI.smartAdd(text, portfolioId, conversionRate);
 
       setPortfolios((prev) =>
         prev.map((portfolio) =>
@@ -342,19 +348,19 @@ export default function PortfoliosPage() {
           icon={DollarSign}
           title="Total Value"
           subtitle={formatCurrency(portfolioStats.totalValue)}
-          color="green"
+          color="yellow"
         />
         <StatCard
           icon={Briefcase}
           title="Portfolios"
           subtitle={`${portfolioStats.totalPortfolios} Active`}
-          color="blue"
+          color="gray"
         />
         <StatCard
           icon={PieChart}
           title="Total Holdings"
           subtitle={`${portfolioStats.totalHoldings} Assets`}
-          color="purple"
+          color="white"
         />
       </div>
 

@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const ALPHA_VANTAGE_API = 'https://www.alphavantage.co/query';
-const API_KEY = process.env.ALPHA_VANTAGE_API_KEY || 'demo';
+const API_KEY = process.env.ALPHA_VANTAGE_API_KEY 
 
 const getStockPrice = async (req, res, next) => {
   try {

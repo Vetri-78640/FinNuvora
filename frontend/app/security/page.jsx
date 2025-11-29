@@ -9,7 +9,7 @@ export default function SecurityPage() {
         <div className="min-h-screen bg-[#000000] text-text-primary font-sans selection:bg-primary/20">
             <Navbar />
 
-            <main className="pt-32 pb-20 px-6">
+            <main className="pt-24 md:pt-32 pb-20 px-6">
                 <div className="max-w-6xl mx-auto">
                     {/* Header */}
                     <div className="text-center mb-20 space-y-6 animate-fade-in">
@@ -17,7 +17,7 @@ export default function SecurityPage() {
                             <Shield size={16} className="fill-success/20" />
                             <span>Bank-Grade Security</span>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+                        <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
                             Your Security is Our Priority
                         </h1>
                         <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">
@@ -125,7 +125,7 @@ export default function SecurityPage() {
                     </div>
 
                     {/* CTA */}
-                    
+
                 </div>
             </main>
 

@@ -29,7 +29,7 @@ const statusOptions = [
 
 export default function GoalsPage() {
   useProtectedRoute();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, convertToUSD, convertAmount } = useCurrency();
 
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ export default function GoalsPage() {
       setError('');
       await goalAPI.createGoal({
         ...form,
-        targetAmount: Number(form.targetAmount),
+        targetAmount: convertToUSD(Number(form.targetAmount)),
       });
 
       setForm(defaultGoalForm);
@@ -122,7 +122,7 @@ export default function GoalsPage() {
     try {
       setUpdatingGoalId(goalId);
       setError('');
-      await goalAPI.updateGoalProgress(goalId, amount);
+      await goalAPI.updateGoalProgress(goalId, convertToUSD(amount));
       setProgressForms((prev) => ({
         ...prev,
         [goalId]: defaultProgressForm,
@@ -140,7 +140,7 @@ export default function GoalsPage() {
     setEditForm({
       title: goal.title,
       description: goal.description || '',
-      targetAmount: goal.targetAmount,
+      targetAmount: convertAmount(goal.targetAmount).toFixed(2),
       deadline: goal.deadline?.slice(0, 10),
       category: goal.category || '',
       status: goal.status,
@@ -162,7 +162,7 @@ export default function GoalsPage() {
       await goalAPI.updateGoal(editingGoalId, {
         ...editForm,
         targetAmount: editForm.targetAmount
-          ? Number(editForm.targetAmount)
+          ? convertToUSD(Number(editForm.targetAmount))
           : undefined,
       });
       cancelEditing();
