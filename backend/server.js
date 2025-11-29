@@ -37,7 +37,22 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Allow localhost, the defined frontend URL, and any Vercel preview deployment
+    if (
+      origin === 'http://localhost:3000' ||
+      origin === process.env.FRONTEND_URL ||
+      origin.endsWith('.vercel.app')
+    ) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin); // Log blocked origins for debugging
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

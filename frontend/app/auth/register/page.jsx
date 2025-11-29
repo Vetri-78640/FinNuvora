@@ -54,7 +54,20 @@ export default function RegisterPage() {
         router.push('/dashboard');
       }, 1000);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Registration failed. Please try again.';
+      console.error('Registration Error:', err);
+      let errorMsg = 'Registration failed. Please try again.';
+
+      if (err.response) {
+        // Server responded with a status code outside 2xx
+        errorMsg = err.response.data?.error || `Server Error (${err.response.status})`;
+      } else if (err.request) {
+        // Request was made but no response received (Network Error/CORS)
+        errorMsg = 'Network Error: Unable to reach server. Check your connection.';
+      } else {
+        // Something happened in setting up the request
+        errorMsg = err.message;
+      }
+
       setError(errorMsg);
     } finally {
       setLoading(false);
