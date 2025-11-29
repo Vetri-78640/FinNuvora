@@ -41,15 +41,19 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow localhost, the defined frontend URL, and any Vercel preview deployment
-    if (
+    // Strict Allow List:
+    // 1. Localhost for development
+    // 2. The exact FRONTEND_URL from env vars (Production)
+    // 3. Vercel Preview URLs that belong to THIS project (contain 'finnuvora')
+    const isAllowed =
       origin === 'http://localhost:3000' ||
       origin === process.env.FRONTEND_URL ||
-      origin.endsWith('.vercel.app')
-    ) {
+      (origin.endsWith('.vercel.app') && origin.includes('finnuvora'));
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('Blocked by CORS:', origin); // Log blocked origins for debugging
+      console.log('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
