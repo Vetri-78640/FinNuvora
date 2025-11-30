@@ -60,22 +60,6 @@ export default function TopBar({ user, title }) {
 
             {/* Actions */}
             <div className="flex items-center gap-4">
-                {/* Search */}
-                <div className="relative hidden md:block">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="pl-10 pr-4 py-2 bg-surface border border-border rounded-full text-sm text-text-primary focus:outline-none focus:border-primary w-64 transition-colors"
-                    />
-                </div>
-
-                {/* Notifications */}
-                <button className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface transition-colors relative">
-                    <Bell size={20} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-background"></span>
-                </button>
-
                 {/* User Profile Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                     <button

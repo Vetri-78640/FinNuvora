@@ -5,7 +5,7 @@ import { portfolioAPI, holdingAPI, stockAPI } from '@/lib/api';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import SmartAddInput from '@/components/SmartAddInput';
 import PortfolioChart from '@/components/PortfolioChart';
-import { RefreshCw, Briefcase, PieChart, DollarSign, Plus, Trash2, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-react';
+import { RefreshCw, Briefcase, PieChart, DollarSign, Plus, Trash2, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Edit2 } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import Button from '@/components/ui/Button';
 
@@ -37,6 +37,7 @@ export default function PortfoliosPage() {
   const [expandedPortfolioIds, setExpandedPortfolioIds] = useState(new Set());
   const [livePrices, setLivePrices] = useState({});
   const [refreshingPrices, setRefreshingPrices] = useState(false);
+  const [editingHoldingId, setEditingHoldingId] = useState(null);
 
   const loadPortfolios = useCallback(async () => {
     try {
@@ -175,6 +176,20 @@ export default function PortfoliosPage() {
     }));
   };
 
+  const handleEditHolding = (portfolioId, holding) => {
+    setEditingHoldingId(holding._id);
+    setHoldingForms(prev => ({
+      ...prev,
+      [portfolioId]: {
+        symbol: holding.symbol,
+        quantity: holding.quantity,
+        buyPrice: holding.buyPrice,
+        currentPrice: holding.currentPrice || ''
+      }
+    }));
+    // Scroll to form if needed, or just let user see it
+  };
+
   const handleAddHolding = async (portfolioId) => {
     const formData = holdingForms[portfolioId] || createEmptyHoldingForm();
     const { symbol, quantity, buyPrice } = formData;
@@ -195,24 +210,48 @@ export default function PortfoliosPage() {
       const buyPriceUSD = convertToUSD(Number(buyPrice));
       const currentPriceUSD = convertToUSD(Number(currentPrice));
 
-      const { data } = await holdingAPI.createHolding({
-        portfolioId,
-        symbol,
-        quantity: Number(quantity),
-        buyPrice: buyPriceUSD,
-        currentPrice: currentPriceUSD,
-      });
+      if (editingHoldingId) {
+        // UPDATE existing holding
+        const { data } = await holdingAPI.updateHolding(editingHoldingId, {
+          quantity: Number(quantity),
+          buyPrice: buyPriceUSD,
+          currentPrice: currentPriceUSD,
+        });
 
-      setPortfolios((prev) =>
-        prev.map((portfolio) =>
-          portfolio._id === portfolioId
-            ? {
-              ...portfolio,
-              holdings: [data.holding, ...(portfolio.holdings || [])],
-            }
-            : portfolio
-        )
-      );
+        setPortfolios((prev) =>
+          prev.map((portfolio) =>
+            portfolio._id === portfolioId
+              ? {
+                ...portfolio,
+                holdings: portfolio.holdings.map(h =>
+                  h._id === editingHoldingId ? data.holding : h
+                ),
+              }
+              : portfolio
+          )
+        );
+        setEditingHoldingId(null); // Reset edit mode
+      } else {
+        // CREATE new holding
+        const { data } = await holdingAPI.createHolding({
+          portfolioId,
+          symbol,
+          quantity: Number(quantity),
+          buyPrice: buyPriceUSD,
+          currentPrice: currentPriceUSD,
+        });
+
+        setPortfolios((prev) =>
+          prev.map((portfolio) =>
+            portfolio._id === portfolioId
+              ? {
+                ...portfolio,
+                holdings: [data.holding, ...(portfolio.holdings || [])],
+              }
+              : portfolio
+          )
+        );
+      }
 
       setHoldingForms((prev) => ({
         ...prev,
@@ -222,7 +261,7 @@ export default function PortfoliosPage() {
       // Refresh prices to get the latest for the new holding
       fetchLivePrices();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to add holding');
+      setError(err.response?.data?.error || 'Failed to save holding');
     } finally {
       setSavingPortfolioId(null);
     }
@@ -489,15 +528,17 @@ export default function PortfoliosPage() {
                     {/* Smart Add Section */}
                     <div className="mb-8">
                       <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
-                        Add New Holding
+                        {editingHoldingId ? 'Edit Holding' : 'Add New Holding'}
                       </h4>
 
-                      <div className="mb-6">
-                        <SmartAddInput
-                          onAdd={(text) => handleSmartAdd(text, portfolio._id)}
-                          disabled={savingPortfolioId === portfolio._id}
-                        />
-                      </div>
+                      {!editingHoldingId && (
+                        <div className="mb-6">
+                          <SmartAddInput
+                            onAdd={(text) => handleSmartAdd(text, portfolio._id)}
+                            disabled={savingPortfolioId === portfolio._id}
+                          />
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                         <div className="md:col-span-3">
@@ -513,6 +554,7 @@ export default function PortfoliosPage() {
                                 event.target.value.toUpperCase()
                               )
                             }
+                            disabled={!!editingHoldingId} // Symbol usually shouldn't change in edit, or maybe it can? Let's disable for safety/simplicity
                           />
                         </div>
                         <div className="md:col-span-3">
@@ -552,14 +594,27 @@ export default function PortfoliosPage() {
                           />
                         </div>
                         <div className="md:col-span-3">
-                          <Button
-                            onClick={() => handleAddHolding(portfolio._id)}
-                            className="w-full"
-                            disabled={savingPortfolioId === portfolio._id}
-                            isLoading={savingPortfolioId === portfolio._id}
-                          >
-                            Add Manually
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleAddHolding(portfolio._id)}
+                              className="w-full"
+                              disabled={savingPortfolioId === portfolio._id}
+                              isLoading={savingPortfolioId === portfolio._id}
+                            >
+                              {editingHoldingId ? 'Update' : 'Add Manually'}
+                            </Button>
+                            {editingHoldingId && (
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  setEditingHoldingId(null);
+                                  setHoldingForms(prev => ({ ...prev, [portfolio._id]: createEmptyHoldingForm() }));
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -585,7 +640,7 @@ export default function PortfoliosPage() {
                             return (
                               <div
                                 key={holding._id}
-                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface border border-border rounded-full p-4 hover:border-primary/30 transition-colors"
+                                className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface border rounded-full p-4 transition-colors ${editingHoldingId === holding._id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
                               >
                                 <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-bold text-xs">
@@ -634,15 +689,24 @@ export default function PortfoliosPage() {
                                     </p>
                                   </div>
 
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteHolding(portfolio._id, holding._id)
-                                    }
-                                    className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors ml-2"
-                                    disabled={savingPortfolioId === portfolio._id}
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleEditHolding(portfolio._id, holding)}
+                                      className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                      disabled={savingPortfolioId === portfolio._id}
+                                    >
+                                      <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteHolding(portfolio._id, holding._id)
+                                      }
+                                      className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                                      disabled={savingPortfolioId === portfolio._id}
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             );

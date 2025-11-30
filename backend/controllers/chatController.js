@@ -60,6 +60,7 @@ const sendMessage = async (req, res, next) => {
         const context = `
     User Financial Data:
     - Recent Transactions: ${JSON.stringify(transactions.map(t => ({
+            id: t._id,
             date: t.date,
             amount: t.amount,
             type: t.type,
@@ -67,9 +68,11 @@ const sendMessage = async (req, res, next) => {
             description: t.description
         })))}
     - Current Holdings: ${JSON.stringify(holdings.map(h => ({
+            id: h._id,
             symbol: h.symbol,
-            shares: h.shares,
-            avgPrice: h.avgPrice
+            quantity: h.quantity,
+            buyPrice: h.buyPrice,
+            currentPrice: h.currentPrice
         })))}
     - Available Categories: ${categoryNames}
     - Exchange Rates (Base USD): ${JSON.stringify(RATES)}
@@ -97,16 +100,15 @@ const sendMessage = async (req, res, next) => {
     ${context}
     
     IMPORTANT INSTRUCTION FOR ACTIONS:
-    If the user explicitly asks to ADD a transaction (expense, income, or investment), you MUST perform the action by outputting a JSON block at the VERY END of your response.
-    Do not just say you did it; you must output the JSON for the system to actually do it.
+    You can perform CRUD operations. If the user asks to ADD, DELETE, or UPDATE, output a JSON block at the VERY END.
     
     CRITICAL CURRENCY RULE:
     - The system stores ALL amounts in USD.
-    - If the user specifies an amount in another currency (e.g., "450 rupees", "100 EUR"), you MUST convert it to USD using the provided 'Exchange Rates' BEFORE putting it in the JSON.
-    - Example: If user says "Spent 8350 INR", and rate is 83.5, the JSON amount must be 100 (8350 / 83.5).
-    - Round to 2 decimal places.
+    - Convert foreign currencies to USD using 'Exchange Rates' before putting in JSON.
     
-    The JSON block must look exactly like this:
+    JSON SCHEMAS:
+    
+    1. ADD TRANSACTION:
     \`\`\`json
     {
       "action": "ADD_TRANSACTION",
@@ -118,8 +120,43 @@ const sendMessage = async (req, res, next) => {
       }
     }
     \`\`\`
-    - For 'categoryName', pick the closest match from 'Available Categories'. If none match, infer a standard one (e.g., Food, Transport, Utilities, Shopping).
-    - If you output JSON, keep your text response brief (e.g., "Sure, I'm adding that transaction for you.").
+
+    2. DELETE TRANSACTION:
+    \`\`\`json
+    {
+      "action": "DELETE_TRANSACTION",
+      "data": {
+        "id": "<transaction_id>"
+      }
+    }
+    \`\`\`
+
+    3. UPDATE TRANSACTION:
+    \`\`\`json
+    {
+      "action": "UPDATE_TRANSACTION",
+      "data": {
+        "id": "<transaction_id>",
+        "amount": <optional_number_in_USD>,
+        "description": "<optional_string>",
+        "type": "<optional_string>",
+        "categoryName": "<optional_string>"
+      }
+    }
+    \`\`\`
+
+    4. DELETE HOLDING:
+    \`\`\`json
+    {
+      "action": "DELETE_HOLDING",
+      "data": {
+        "id": "<holding_id>"
+      }
+    }
+    \`\`\`
+
+    - For 'categoryName', pick the closest match from 'Available Categories'. If none match, infer a standard one.
+    - If you output JSON, keep your text response brief.
     
     Conversation History:
     ${historyPrompt}
@@ -191,11 +228,57 @@ const sendMessage = async (req, res, next) => {
 
                     console.log('Transaction created:', newTx._id); // Debug log
                     actionTaken = true;
+                } else if (actionData.action === 'DELETE_TRANSACTION') {
+                    const tx = await Transaction.findOne({ _id: actionData.data.id, user: req.userId });
+                    if (tx) {
+                        await Transaction.findByIdAndDelete(actionData.data.id);
+                        // Revert balance
+                        const multiplier = (tx.type === 'income') ? -1 : 1;
+                        await User.findByIdAndUpdate(req.userId, {
+                            $inc: { accountBalance: tx.amount * multiplier }
+                        });
+                        actionTaken = true;
+                    }
+                } else if (actionData.action === 'UPDATE_TRANSACTION') {
+                    const tx = await Transaction.findOne({ _id: actionData.data.id, user: req.userId });
+                    if (tx) {
+                        // Revert old balance effect
+                        const oldMultiplier = (tx.type === 'income') ? -1 : 1;
+                        await User.findByIdAndUpdate(req.userId, {
+                            $inc: { accountBalance: tx.amount * oldMultiplier }
+                        });
+
+                        // Update fields
+                        if (actionData.data.amount) tx.amount = actionData.data.amount;
+                        if (actionData.data.description) tx.description = actionData.data.description;
+                        if (actionData.data.type) tx.type = actionData.data.type;
+
+                        if (actionData.data.categoryName) {
+                            let category = await Category.findOne({
+                                user: req.userId,
+                                name: { $regex: new RegExp(`^${actionData.data.categoryName}$`, 'i') }
+                            });
+                            if (category) tx.category = category._id;
+                        }
+
+                        await tx.save();
+
+                        // Apply new balance effect
+                        const newMultiplier = (tx.type === 'income') ? 1 : -1;
+                        await User.findByIdAndUpdate(req.userId, {
+                            $inc: { accountBalance: tx.amount * newMultiplier }
+                        });
+                        actionTaken = true;
+                    }
+                } else if (actionData.action === 'DELETE_HOLDING') {
+                    await Holding.findOneAndDelete({ _id: actionData.data.id, user: req.userId });
+                    actionTaken = true;
                 }
+
             } catch (e) {
                 console.error("Failed to execute AI action", e);
                 // Append a user-friendly error message
-                responseText += "\n\n(I tried to add that transaction, but something went wrong. Please try again.)";
+                responseText += "\n\n(I tried to perform that action, but something went wrong. Please try again.)";
             }
         } else {
             console.log('No JSON block found in response');
