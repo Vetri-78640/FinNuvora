@@ -103,8 +103,9 @@ const sendMessage = async (req, res, next) => {
     You can perform CRUD operations. If the user asks to ADD, DELETE, or UPDATE, output a JSON block at the VERY END.
     
     CRITICAL CURRENCY RULE:
-    - The system stores ALL amounts in USD.
-    - Convert foreign currencies to USD using 'Exchange Rates' before putting in JSON.
+    - The system stores ALL amounts in INR (Indian Rupees).
+    - Convert foreign currencies to INR using 'Exchange Rates' before putting in JSON.
+    - If user says "dollars" or "$", convert to INR.
     
     JSON SCHEMAS:
     
@@ -113,7 +114,7 @@ const sendMessage = async (req, res, next) => {
     {
       "action": "ADD_TRANSACTION",
       "data": {
-        "amount": <number_in_USD>,
+        "amount": <number_in_INR>,
         "description": "<string>",
         "type": "<income|expense|investment>",
         "categoryName": "<string>" 
@@ -137,7 +138,7 @@ const sendMessage = async (req, res, next) => {
       "action": "UPDATE_TRANSACTION",
       "data": {
         "id": "<transaction_id>",
-        "amount": <optional_number_in_USD>,
+        "amount": <optional_number_in_INR>,
         "description": "<optional_string>",
         "type": "<optional_string>",
         "categoryName": "<optional_string>"
@@ -154,7 +155,7 @@ const sendMessage = async (req, res, next) => {
       }
     }
     \`\`\`
-
+    
     - For 'categoryName', pick the closest match from 'Available Categories'. If none match, infer a standard one.
     - If you output JSON, keep your text response brief.
     
@@ -188,24 +189,19 @@ const sendMessage = async (req, res, next) => {
                 console.log('Parsed Action Data:', actionData); // Debug log
 
                 if (actionData.action === 'ADD_TRANSACTION') {
-                    // Find category
+                    // Find category or create it
                     let category = await Category.findOne({
                         user: req.userId,
                         name: { $regex: new RegExp(`^${actionData.data.categoryName}$`, 'i') }
                     });
 
-                    // If not found, try to find a generic one or create? Let's use first available or null
                     if (!category) {
-                        if (categories.length > 0) {
-                            category = categories[0];
-                        } else {
-                            // Create a default category if none exist
-                            category = await Category.create({
-                                user: req.userId,
-                                name: 'General',
-                                color: '#94a3b8' // slate-400
-                            });
-                        }
+                        // Create the category if it doesn't exist
+                        category = await Category.create({
+                            user: req.userId,
+                            name: actionData.data.categoryName, // Use the name provided by AI
+                            color: '#3B82F6' // Default blue
+                        });
                     }
 
                     console.log('Creating transaction with category:', category?.name); // Debug log
@@ -258,7 +254,15 @@ const sendMessage = async (req, res, next) => {
                                 user: req.userId,
                                 name: { $regex: new RegExp(`^${actionData.data.categoryName}$`, 'i') }
                             });
-                            if (category) tx.category = category._id;
+
+                            if (!category) {
+                                category = await Category.create({
+                                    user: req.userId,
+                                    name: actionData.data.categoryName,
+                                    color: '#3B82F6'
+                                });
+                            }
+                            tx.category = category._id;
                         }
 
                         await tx.save();

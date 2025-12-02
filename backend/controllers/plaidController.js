@@ -2,7 +2,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require('plaid');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
-const { convertToUSD } = require('../utils/currencyUtils');
+const { convertToBase } = require('../utils/currencyUtils');
 
 const configuration = new Configuration({
     basePath: PlaidEnvironments.sandbox, // Default to sandbox
@@ -129,7 +129,7 @@ const syncTransactions = async (req, res, next) => {
 
                 let finalAmount = amount;
                 if (t.iso_currency_code && t.iso_currency_code !== 'USD') {
-                    finalAmount = convertToUSD(amount, t.iso_currency_code);
+                    finalAmount = convertToBase(amount, t.iso_currency_code);
                 }
 
                 await Transaction.create({

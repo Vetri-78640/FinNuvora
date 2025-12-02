@@ -57,6 +57,20 @@ const register = async (req, res, next) => {
       name
     });
 
+    // Seed default categories
+    const defaultCategories = [
+      'Shopping', 'Food', 'Transportation', 'Entertainment',
+      'Electricity Bill', 'Groceries', 'Other'
+    ];
+
+    const categoryDocs = defaultCategories.map(catName => ({
+      user: user._id,
+      name: catName,
+      color: '#3B82F6' // Default blue color
+    }));
+
+    await require('../models/Category').insertMany(categoryDocs);
+
     const token = jwt.sign(
       { id: user._id.toString(), email: user.email },
       process.env.JWT_SECRET,

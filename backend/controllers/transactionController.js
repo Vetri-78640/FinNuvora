@@ -141,6 +141,12 @@ const uploadTransaction = async (req, res, next) => {
     }
 
     const pdfFile = req.files.pdf;
+    if(pdfFile.mimetype !== 'application/pdf'){
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid file type. Only PDF is allowed.'
+      });
+    }
     logToFile({
       name: pdfFile.name,
       size: pdfFile.size,
@@ -240,7 +246,7 @@ const uploadTransaction = async (req, res, next) => {
 
 const createTransaction = async (req, res, next) => {
   try {
-    const { categoryId, type, amount, description, date } = req.body;
+    const { categoryId, categoryName, type, amount, description, date } = req.body;
     const userId = req.userId;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -250,10 +256,10 @@ const createTransaction = async (req, res, next) => {
       });
     }
 
-    if (!categoryId || !type || !amount || !date) {
+    if ((!categoryId && !categoryName) || !type || !amount || !date) {
       return res.status(400).json({
         success: false,
-        error: 'categoryId, type, amount, and date are required'
+        error: 'Category, type, amount, and date are required'
       });
     }
 
@@ -271,32 +277,51 @@ const createTransaction = async (req, res, next) => {
       });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(404).json({
-        success: false,
-        error: 'Category not found'
-      });
-    }
+    let finalCategoryId = categoryId;
 
-    const category = await Category.findById(categoryId);
-
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        error: 'Category not found'
+    // If categoryName is provided, find or create it
+    if (categoryName) {
+      const normalizedName = categoryName.trim();
+      let category = await Category.findOne({
+        user: new mongoose.Types.ObjectId(userId),
+        name: { $regex: new RegExp(`^${normalizedName}$`, 'i') }
       });
-    }
 
-    if (category.user.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to use this category'
-      });
+      if (!category) {
+        category = await Category.create({
+          user: new mongoose.Types.ObjectId(userId),
+          name: normalizedName
+        });
+      }
+      finalCategoryId = category._id;
+    } else if (categoryId) {
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Category not found'
+        });
+      }
+
+      const category = await Category.findById(categoryId);
+
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          error: 'Category not found'
+        });
+      }
+
+      if (category.user.toString() !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not authorized to use this category'
+        });
+      }
     }
 
     const transaction = await Transaction.create({
       user: new mongoose.Types.ObjectId(userId),
-      category: category._id,
+      category: finalCategoryId,
       type,
       amount: parseFloat(amount),
       description: description || null,

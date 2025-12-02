@@ -1,35 +1,53 @@
-// Exchange rates cache
+// Exchange rates cache (Base: INR)
 let RATES = {
-    USD: 1,
-    INR: 83.12,
-    EUR: 0.92,
-    GBP: 0.79,
-    JPY: 149.50,
-    CAD: 1.36,
-    AUD: 1.52
+    INR: 1,
+    USD: 0.012, // Approx 1/83
+    EUR: 0.011,
+    GBP: 0.0095,
+    JPY: 1.80,
+    CAD: 0.016,
+    AUD: 0.018
 };
 
 let lastFetchTime = null;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-// Fetch latest exchange rates from API
+// Fetch latest exchange rates from API and rebase to INR
 const fetchExchangeRates = async () => {
     try {
+        // API returns rates relative to USD
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await response.json();
 
         if (data && data.rates) {
-            RATES = {
-                USD: 1,
-                INR: data.rates.INR || 83.12,
-                EUR: data.rates.EUR || 0.92,
-                GBP: data.rates.GBP || 0.79,
-                JPY: data.rates.JPY || 149.50,
-                CAD: data.rates.CAD || 1.36,
-                AUD: data.rates.AUD || 1.52
+            const usdToInr = data.rates.INR || 83.12;
+
+            // Rebase all rates to INR (Rate_X_in_INR = Rate_X_in_USD / Rate_INR_in_USD)
+            // Actually: 1 USD = 83 INR. 1 EUR = 0.92 USD.
+            // We want: How much of Currency X is 1 INR?
+            // 1 INR = (1/83) USD.
+            // Rate in map should be: 1 INR = ? Currency
+
+            // Wait, usually RATES map is: 1 Base = X Currency.
+            // If Base is INR. RATES.USD should be ~0.012.
+            // API gives: 1 USD = X Currency.
+            // 1 USD = 83 INR.
+            // 1 USD = 0.92 EUR.
+            // So 83 INR = 0.92 EUR => 1 INR = 0.92 / 83 EUR.
+
+            const newRates = {
+                INR: 1
             };
+
+            Object.keys(data.rates).forEach(currency => {
+                if (currency !== 'INR') {
+                    newRates[currency] = data.rates[currency] / usdToInr;
+                }
+            });
+
+            RATES = newRates;
             lastFetchTime = Date.now();
-            console.log('Exchange rates updated successfully');
+            console.log('Exchange rates updated successfully (Base: INR)');
         }
     } catch (error) {
         console.error('Failed to fetch exchange rates, using cached values:', error.message);
@@ -48,16 +66,21 @@ const getExchangeRates = async () => {
     return RATES;
 };
 
-// Convert amount from any currency to USD
-const convertToUSD = (amount, fromCurrency) => {
-    if (fromCurrency === 'USD') return amount;
-    return amount / RATES[fromCurrency];
+// Convert amount from any currency to Base (INR)
+const convertToBase = (amount, fromCurrency) => {
+    if (fromCurrency === 'INR') return amount;
+    // Amount in Foreign / Rate of Foreign per INR = Amount in INR
+    // Example: 100 USD. Rate USD (per INR) = 0.012.
+    // 100 / 0.012 = 8333 INR. Correct.
+    return amount / (RATES[fromCurrency] || 1);
 };
 
-// Convert amount from USD to any currency
-const convertFromUSD = (amount, toCurrency) => {
-    if (toCurrency === 'USD') return amount;
-    return amount * RATES[toCurrency];
+// Convert amount from Base (INR) to any currency
+const convertFromBase = (amount, toCurrency) => {
+    if (toCurrency === 'INR') return amount;
+    // Amount in INR * Rate of Foreign per INR = Amount in Foreign
+    // Example: 8333 INR * 0.012 = 100 USD. Correct.
+    return amount * (RATES[toCurrency] || 1);
 };
 
 // Initialize rates on module load
@@ -67,6 +90,6 @@ module.exports = {
     RATES,
     getExchangeRates,
     fetchExchangeRates,
-    convertToUSD,
-    convertFromUSD
+    convertToBase,
+    convertFromBase
 };

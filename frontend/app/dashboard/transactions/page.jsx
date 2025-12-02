@@ -170,14 +170,28 @@ export default function TransactionsPage() {
       return;
     }
 
+    if (form.categoryId === 'other' && !form.customCategory) {
+      setError('Please enter a custom category name.');
+      return;
+    }
+
     try {
       setCreating(true);
       setError('');
       setSuccess('');
-      await transactionAPI.createTransaction({
+
+      const payload = {
         ...form,
         amount: Number(form.amount),
-      });
+      };
+
+      if (form.categoryId === 'other') {
+        payload.categoryName = form.customCategory;
+        delete payload.categoryId;
+        delete payload.customCategory;
+      }
+
+      await transactionAPI.createTransaction(payload);
 
       setForm({
         ...defaultForm,
@@ -193,6 +207,8 @@ export default function TransactionsPage() {
       setTimeout(() => setSuccess(''), 3000);
 
       await loadTransactions();
+      // Reload categories in case a new one was created
+      await loadCategories();
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -225,20 +241,35 @@ export default function TransactionsPage() {
 
     if (!editingId) return;
 
+    if (editingForm.categoryId === 'other' && !editingForm.customCategory) {
+      setError('Please enter a custom category name.');
+      return;
+    }
+
     try {
       setSubmittingEdit(true);
       setError('');
       setSuccess('');
 
-      await transactionAPI.updateTransaction(editingId, {
+      const payload = {
         ...editingForm,
         amount: Number(editingForm.amount),
-      });
+      };
+
+      if (editingForm.categoryId === 'other') {
+        payload.categoryName = editingForm.customCategory;
+        delete payload.categoryId;
+        delete payload.customCategory;
+      }
+
+      await transactionAPI.updateTransaction(editingId, payload);
 
       cancelEditing();
       setSuccess('Transaction updated successfully');
       setTimeout(() => setSuccess(''), 3000);
       await loadTransactions();
+      // Reload categories in case a new one was created
+      await loadCategories();
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -425,8 +456,26 @@ export default function TransactionsPage() {
                   {category.name}
                 </option>
               ))}
+              <option value="other">Other (Custom)</option>
             </select>
           </div>
+
+          {/* Custom Category Input */}
+          {((editingId ? editingForm.categoryId : form.categoryId) === 'other') && (
+            <div className="md:col-span-3 animate-in fade-in slide-in-from-top-2">
+              <input
+                className="input-field w-full"
+                placeholder="Enter Custom Category"
+                value={editingId ? (editingForm.customCategory || '') : (form.customCategory || '')}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const setter = editingId ? setEditingForm : setForm;
+                  setter(prev => ({ ...prev, customCategory: val }));
+                }}
+                required
+              />
+            </div>
+          )}
 
           <div className="md:col-span-2">
             <input

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
-const { convertToUSD } = require('../utils/currencyUtils');
+const { convertToBase } = require('../utils/currencyUtils');
 
 const createGoal = async (req, res, next) => {
   try {
@@ -39,13 +39,13 @@ const createGoal = async (req, res, next) => {
 
     // Fetch user to get currency
     const user = await User.findById(userId);
-    const targetAmountUSD = convertToUSD(targetAmount, user.currency || 'USD');
+    const targetAmountBase = convertToBase(targetAmount, user.currency || 'USD');
 
     const goal = await Goal.create({
       user: new mongoose.Types.ObjectId(userId),
       title,
       description: description || null,
-      targetAmount: targetAmountUSD, // Store in USD
+      targetAmount: targetAmountBase, // Store in Base (INR)
       deadline: deadlineDate,
       category: category || null,
       status: 'active'
@@ -147,9 +147,9 @@ const updateGoalProgress = async (req, res, next) => {
 
     // Fetch user to get currency
     const user = await User.findById(userId);
-    const amountUSD = convertToUSD(amount, user.currency || 'USD');
+    const amountBase = convertToBase(amount, user.currency || 'USD');
 
-    goal.currentAmount += amountUSD; // Add USD amount
+    goal.currentAmount += amountBase; // Add Base amount
     goal.status = goal.currentAmount >= goal.targetAmount ? 'completed' : 'active';
     await goal.save();
 

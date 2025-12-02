@@ -7,23 +7,23 @@ import { userAPI } from '@/lib/api';
 const CurrencyContext = createContext();
 
 const RATES = {
-    USD: 1,
-    EUR: 0.92,
-    GBP: 0.79,
-    INR: 83.50,
-    JPY: 151.50,
-    CAD: 1.36,
-    AUD: 1.52,
-    CNY: 7.23,
-    CHF: 0.91,
-    SGD: 1.35,
-    NZD: 1.67,
-    HKD: 7.83,
-    KRW: 1350.00,
-    BRL: 5.15,
-    ZAR: 18.50,
-    RUB: 92.50,
-    MXN: 16.50
+    INR: 1,
+    USD: 0.012,
+    EUR: 0.011,
+    GBP: 0.0095,
+    JPY: 1.80,
+    CAD: 0.016,
+    AUD: 0.018,
+    CNY: 0.086,
+    CHF: 0.011,
+    SGD: 0.016,
+    NZD: 0.020,
+    HKD: 0.093,
+    KRW: 16.0,
+    BRL: 0.060,
+    ZAR: 0.22,
+    RUB: 1.10,
+    MXN: 0.20
 };
 
 const SYMBOLS = {
@@ -118,6 +118,10 @@ export function CurrencyProvider({ children }) {
     };
 
     const formatCurrency = (amount) => {
+        // Amount is in INR (Base)
+        // We want to show in User's Currency
+        // Rate = UserCurrency / INR
+        // Converted = Amount * Rate
         const rate = RATES[currency] || 1;
         const converted = amount * rate;
 
@@ -130,11 +134,18 @@ export function CurrencyProvider({ children }) {
     };
 
     const convertAmount = (amount) => {
+        // Amount in INR -> User Currency
         const rate = RATES[currency] || 1;
         return amount * rate;
     };
 
     const convertToUSD = (amount) => {
+        // This function name is misleading now. It should be convertToBase (to INR).
+        // But to avoid breaking changes, let's see.
+        // If components use this to send data to backend, they expect it to be in Base Currency.
+        // So this should return amount / rate.
+        // If User enters 100 USD. Rate USD = 0.012.
+        // Base (INR) = 100 / 0.012 = 8333.
         const rate = RATES[currency] || 1;
         return amount / rate;
     };

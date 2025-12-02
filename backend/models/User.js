@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      default: 'USD',
+      default: 'INR',
       enum: ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'],
       trim: true,
     },
@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     monthlyLimit: {
       type: Number,
-      default: 600, // Default ~$50,000 INR
+      default: 50000, // Default ₹50,000
     },
     plaidAccessToken: {
       type: String,
