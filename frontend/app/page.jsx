@@ -38,11 +38,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] flex flex-col font-sans text-text-primary">
+    <div className="min-h-screen bg-[#000000] flex flex-col font-sans text-text-primary overflow-x-hidden">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
+      <section className="pt-24 md:pt-32 pb-16 md:pb-20 px-6 relative overflow-hidden">
         {/* Background Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
@@ -52,7 +52,7 @@ export default function LandingPage() {
             Now in Early Access
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-tight animate-slide-in">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-tight animate-slide-in">
             Master your wealth with<br />
             <span className="text-primary">intelligent insights</span>
           </h1>
@@ -80,7 +80,7 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Highlight 1 */}
-      <section className="py-24 px-6 relative">
+      <section className="py-16 md:py-24 px-6 relative">
         <div className="absolute top-1/2 left-0 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-blue-500/10 rounded-full blur-[100px] -z-10" />
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 space-y-6">
@@ -127,17 +127,27 @@ export default function LandingPage() {
               </div>
 
               {/* Top Asset (Full Width) */}
-              <div className="col-span-1 sm:col-span-2 bg-surface-elevated rounded-2xl p-5 border border-white/5 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                  <Cpu size={20} />
+              <div className="col-span-1 sm:col-span-2 bg-surface-elevated rounded-2xl p-4 sm:p-5 border border-white/5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 shrink-0">
+                    <Cpu size={20} />
+                  </div>
+                  <div className="flex-1 sm:hidden">
+                    {/* Mobile only header part if needed, but let's keep simple */}
+                    <div className="text-sm font-bold text-white">Nvidia Corp.</div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-white">Nvidia Corp.</div>
+
+                <div className="flex-1 w-full sm:w-auto">
+                  <div className="hidden sm:block text-sm font-bold text-white">Nvidia Corp.</div>
                   <div className="text-xs text-text-secondary">100 Shares</div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-white">$18,250.00</div>
-                  <div className="text-xs text-green-500">+10.4%</div>
+                <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 border-white/5 pt-2 sm:pt-0 mt-2 sm:mt-0 flex justify-between sm:block">
+                  <span className="text-sm text-text-secondary sm:hidden">Value</span>
+                  <div>
+                    <div className="text-sm font-bold text-white">$18,250.00</div>
+                    <div className="text-xs text-green-500">+10.4%</div>
+                  </div>
                 </div>
               </div>
 
@@ -166,7 +176,7 @@ export default function LandingPage() {
           </div>
           <div className="flex-1">
             {/* Detailed Mock UI: AI Insights Stack */}
-            <div className="relative h-[400px] w-full flex items-center justify-center">
+            <div className="relative h-[450px] sm:h-[400px] w-full flex items-center justify-center mt-8 sm:mt-0">
               {/* Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
 
@@ -197,8 +207,8 @@ export default function LandingPage() {
               </div>
 
               {/* Main Card (Front) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full bg-[#121212] border border-white/10 rounded-3xl p-8 shadow-2xl z-10 hover:-translate-y-[52%] transition-transform duration-300">
-                <div className="flex items-center justify-between mb-6">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full bg-[#121212] border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl z-10 hover:-translate-y-[52%] transition-transform duration-300">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
                     <Zap size={12} />
                     <span>AI Recommendation</span>
@@ -206,16 +216,16 @@ export default function LandingPage() {
                   <span className="text-xs text-text-secondary">Just now</span>
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-2">Optimize Subscriptions</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Optimize Subscriptions</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-6">
                   We found 3 unused subscriptions costing you <span className="text-white font-bold">$45/mo</span>. Canceling them could boost your savings rate by 12%.
                 </p>
 
-                <div className="flex gap-3">
-                  <button className="flex-1 py-3 bg-primary text-background rounded-xl font-bold text-sm hover:bg-primary-hover transition-colors">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button className="flex-1 py-3 bg-primary text-background rounded-xl font-bold text-sm hover:bg-primary-hover transition-colors text-center">
                     Review List
                   </button>
-                  <button className="px-4 py-3 bg-white/5 text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-colors">
+                  <button className="px-4 py-3 bg-white/5 text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-colors text-center">
                     Dismiss
                   </button>
                 </div>
@@ -226,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-6 bg-surface/30 border-y border-white/5">
+      <section className="py-16 md:py-24 px-6 bg-surface/30 border-y border-white/5">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Loved by Finance Experts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -247,7 +257,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6 relative overflow-hidden">
+      <section className="py-20 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight">Start your financial revolution.</h2>
@@ -256,7 +266,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={handleCta}
-            className="px-10 py-5 bg-primary text-background rounded-full font-bold text-xl hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:scale-105"
+            className="px-8 py-4 sm:px-10 sm:py-5 bg-primary text-background rounded-full font-bold text-lg sm:text-xl hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:scale-105 w-full sm:w-auto"
           >
             {isAuthenticated ? 'Go to Dashboard' : 'Get Started for Free'}
           </button>

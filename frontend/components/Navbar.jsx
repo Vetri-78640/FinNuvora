@@ -110,54 +110,56 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-20 left-0 w-full bg-background border-b border-border p-6 flex flex-col gap-4 shadow-xl animate-slide-in">
-          <Link
-            href="/features"
-            className="text-lg font-medium text-text-secondary hover:text-text-primary py-2"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Features
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-lg font-medium text-text-secondary hover:text-text-primary py-2"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Pricing
-          </Link>
-          <div className="h-px bg-border my-2" />
-
-          {/* <div className="flex items-center justify-between py-2">
-            <span className="text-text-secondary">Theme</span>
+        <div className="md:hidden fixed inset-0 top-0 z-[60] bg-background/95 backdrop-blur-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top-10 duration-200">
+          <div className="flex justify-end">
             <button
-              onClick={toggleTheme}
-              className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+              className="text-text-primary p-2"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              <X size={24} />
             </button>
-          </div> */}
+          </div>
 
-          {isAuthenticated ? (
-            <div className="flex flex-col gap-3 mt-2">
-              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full justify-center">Dashboard</Button>
-              </Link>
-              <Button onClick={handleLogout} variant="secondary" className="w-full justify-center">
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 mt-2">
-              <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="secondary" className="w-full justify-center">Sign in</Button>
-              </Link>
-              <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full justify-center">
-                  Get Started
+          <div className="flex flex-col gap-4 mt-4">
+            <Link
+              href="/features"
+              className="text-2xl font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Features
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-2xl font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Pricing
+            </Link>
+          </div>
+
+          <div className="mt-auto flex flex-col gap-4 pb-8">
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full justify-center py-4 text-lg">Dashboard</Button>
+                </Link>
+                <Button onClick={handleLogout} variant="secondary" className="w-full justify-center py-4 text-lg">
+                  Logout
                 </Button>
-              </Link>
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="secondary" className="w-full justify-center py-4 text-lg">Sign in</Button>
+                </Link>
+                <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full justify-center py-4 text-lg">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       )}
     </nav>
