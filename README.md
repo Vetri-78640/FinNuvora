@@ -1,6 +1,9 @@
 # FinNuvora - Complete Project Description
 
 ## Project Overview
+
+Individuals and small investors face difficulty in tracking and analyzing their financial data due to unorganized transaction history, information overload, and lack of personalized insights
+
 FinNuvora is a full-stack personal finance management platform designed for sophisticated investors and wealth managers. It combines portfolio tracking, transaction management, AI-powered insights, and PDF document processing into a unified dashboard. The application targets users who manage multiple asset classes and need intelligent analysis of their financial positions.
 
 ## Architecture Overview
@@ -28,7 +31,6 @@ FinNuvora is a full-stack personal finance management platform designed for soph
 
 **Database:**
 *   MongoDB Atlas (cloud) - All financial data & authentication
-*   *Note:* Originally had MySQL/Prisma for auth but consolidated to MongoDB-only for simplicity.
 
 **Deployment:**
 *   **Frontend:** Vercel (auto-deploys from GitHub)
