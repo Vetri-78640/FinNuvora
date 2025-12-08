@@ -246,7 +246,6 @@ FinNuvora is a full-stack personal finance management platform designed for soph
 *   Automatic price update scheduling (background job ready)
 
 ### User Preferences
-*   Theme selection (dark/light)
 *   Currency preference
 *   Notification settings
 *   Privacy controls
@@ -310,20 +309,12 @@ FinNuvora is a full-stack personal finance management platform designed for soph
 *   Responsive grid layouts
 *   Mobile-friendly design
 
-### Removed Elements
-*   Blue circle logos (cleaned up for professional look)
-*   Unnecessary visual clutter
-
-## Git Repository Structure
-(Standard structure implied)
 
 ## Known Limitations & Future Features
 
 ### Current Limitations
 *   No real-time price updates (scheduled jobs needed)
-*   Basic pagination (no cursor-based)
 *   Limited AI context window for Gemini
-*   Mobile dashboard optimization needed
 
 ### Future Enhancements
 *   WebSocket for real-time price updates
@@ -336,11 +327,10 @@ FinNuvora is a full-stack personal finance management platform designed for soph
 *   Options trading support
 
 ## Critical Points for Another AI
-*   **MongoDB-Only Architecture:** Project uses ONLY MongoDB for all data (user auth + financial data). No MySQL/Prisma.
+*   **MongoDB-Only Architecture:** Project uses ONLY MongoDB for all data (user auth + financial data).
 *   **Rate Limiting:** Email-based (not IP-based) to avoid IPv6 validation errors.
 *   **Environment Variables:** Must be set in deployment platforms (Vercel & Render) - never hardcoded.
 *   **JWT Flow:** 7-day expiration, stored in cookies, validated on protected routes.
-*   **CORS:** Frontend URL in `FRONTEND_URL` env var for backend CORS config.
 *   **API Structure:** RESTful with consistent error handling and response format.
 *   **Security First:** All inputs validated, passwords hashed, tokens secured.
-*   **Deployment Pipeline:** GitHub -> Vercel (frontend) + Render (backend) with auto-redeploy.
+*   **Deployment Pipeline:** GitHub -> Vercel (frontend) + Render (backend)
