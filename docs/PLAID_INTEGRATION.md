@@ -408,6 +408,6 @@ If you're building a fintech product, Plaid integration is a weekend project tha
 
 ---
 
-*Vetri builds FinNuvora — an AI-powered personal finance platform. Follow for more engineering deep dives.*
+*FinNuvora by Vetri — an AI-powered personal finance platform. Follow for more engineering deep dives.*
 
 **Tags:** `#plaid` `#nodejs` `#fintech` `#bankapi` `#nextjs` `#javascript` `#webdev` `#api`

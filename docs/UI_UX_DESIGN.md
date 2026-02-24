@@ -257,6 +257,6 @@ If you're building a fintech product, I hope this gives you a useful reference f
 
 ---
 
-*Vetri builds FinNuvora — an AI-powered personal finance platform. Follow for more engineering deep dives.*
+*FinNuvora by Vetri — an AI-powered personal finance platform. Follow for more engineering deep dives.*
 
 **Tags:** `#webdev` `#uidesign` `#nextjs` `#fintech` `#tailwindcss` `#darkmode` `#designsystem` `#ux`
