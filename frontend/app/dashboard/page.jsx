@@ -5,6 +5,7 @@ import {
   ArrowUpRight, ArrowUp, Download, Upload, RefreshCw, Wallet, PieChart
 } from 'lucide-react';
 import ExpenditureChart from '@/components/dashboard/ExpenditureChart';
+import BankConnect from '@/components/BankConnect';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import Link from 'next/link';
 import { useCurrency } from '@/lib/contexts/CurrencyContext';
@@ -239,6 +240,9 @@ export default function DashboardPage() {
               </span>
             </div>
           </div>
+
+          {/* Bank Connection */}
+          <BankConnect variant="full" />
 
         </div>
       </div>

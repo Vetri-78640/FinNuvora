@@ -3,7 +3,7 @@ const router = express.Router();
 const { getHistory, sendMessage, clearHistory } = require('../controllers/chatController');
 const auth = require('../middleware/auth');
 
-console.log('✅ Chat Routes Loaded');
+console.log('Chat Routes Loaded');
 
 router.use(auth);
 

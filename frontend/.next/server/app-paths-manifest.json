@@ -9,5 +9,12 @@
   "/dashboard/portfolios/page": "app/dashboard/portfolios/page.js",
   "/dashboard/profile/page": "app/dashboard/profile/page.js",
   "/dashboard/transactions/page": "app/dashboard/transactions/page.js",
-  "/page": "app/page.js"
+  "/features/page": "app/features/page.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/page": "app/page.js",
+  "/pricing/page": "app/pricing/page.js",
+  "/privacy/page": "app/privacy/page.js",
+  "/roadmap/page": "app/roadmap/page.js",
+  "/security/page": "app/security/page.js",
+  "/terms/page": "app/terms/page.js"
 }

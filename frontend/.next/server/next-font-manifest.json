@@ -1,42 +1,66 @@
 {
   "app": {
-    "[project]/app/_not-found/page": [
+    "[project]/frontend/app/_not-found/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/auth/login/page": [
+    "[project]/frontend/app/auth/login/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/auth/register/page": [
+    "[project]/frontend/app/auth/register/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/goals/page": [
+    "[project]/frontend/app/dashboard/goals/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/insights/page": [
+    "[project]/frontend/app/dashboard/insights/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/page": [
+    "[project]/frontend/app/dashboard/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/portfolios/page": [
+    "[project]/frontend/app/dashboard/portfolios/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/profile/page": [
+    "[project]/frontend/app/dashboard/profile/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/dashboard/transactions/page": [
+    "[project]/frontend/app/dashboard/transactions/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
-    "[project]/app/page": [
+    "[project]/frontend/app/features/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/pricing/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/privacy/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/roadmap/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/security/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/terms/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ]

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { userAPI, preferencesAPI } from '@/lib/api';
+import BankConnect from '@/components/BankConnect';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import { User, Lock, Settings, Bell, Wallet, Check, ChevronDown } from 'lucide-react';
@@ -384,6 +385,11 @@ export default function ProfilePage() {
               Update Password
             </Button>
           </form>
+        </div>
+
+        {/* Bank Account */}
+        <div className="md:col-span-2">
+          <BankConnect variant="full" />
         </div>
 
         {/* App Preferences */}

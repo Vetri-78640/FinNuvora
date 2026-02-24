@@ -133,6 +133,7 @@ export const holdingAPI = {
 };
 
 export const plaidAPI = {
+  getStatus: () => api.get('/plaid/status'),
   createLinkToken: () => api.post('/plaid/create_link_token'),
   setAccessToken: (public_token) => api.post('/plaid/set_access_token', { public_token }),
   syncTransactions: () => api.post('/plaid/sync_transactions')

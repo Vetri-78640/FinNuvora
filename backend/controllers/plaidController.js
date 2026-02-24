@@ -16,6 +16,23 @@ const configuration = new Configuration({
 
 const client = new PlaidApi(configuration);
 
+// @desc    Get Plaid connection status
+// @route   GET /api/plaid/status
+// @access  Private
+const getStatus = async (req, res) => {
+    try {
+        const configured = !!(process.env.PLAID_CLIENT_ID && process.env.PLAID_SECRET);
+        if (!configured) {
+            return res.json({ configured: false, connected: false });
+        }
+        const user = await User.findById(req.userId).select('plaidAccessToken plaidItemId');
+        res.json({ configured: true, connected: !!user.plaidAccessToken });
+    } catch (err) {
+        console.error('Error getting Plaid status:', err.message);
+        res.status(500).json({ error: 'Failed to get status' });
+    }
+};
+
 // @desc    Create Link Token
 // @route   POST /api/plaid/create_link_token
 // @access  Private
@@ -162,6 +179,7 @@ const syncTransactions = async (req, res, next) => {
 };
 
 module.exports = {
+    getStatus,
     createLinkToken,
     setAccessToken,
     syncTransactions

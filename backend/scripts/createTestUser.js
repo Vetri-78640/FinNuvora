@@ -27,15 +27,15 @@ async function createTestUser() {
             accountBalance: 0
         });
 
-        console.log('✅ Test user created successfully!');
-        console.log('\n📧 Login Credentials:');
+        console.log('Test user created successfully!');
+        console.log('\nLogin Credentials:');
         console.log('   Email:', testUser.email);
         console.log('   Password:', testUser.password);
-        console.log('\n🌐 Login at: http://localhost:3000/auth/login');
+        console.log('\nLogin at: http://localhost:3000/auth/login');
 
         await mongoose.connection.close();
     } catch (error) {
-        console.error('❌ Error:', error.message);
+        console.error('Error:', error.message);
         process.exit(1);
     }
 }

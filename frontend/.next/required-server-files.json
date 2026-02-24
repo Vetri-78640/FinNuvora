@@ -101,7 +101,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/vetri/Downloads/AP/FinNuvora/frontend",
+    "outputFileTracingRoot": "/Users/vetri/Downloads/AP/FinNuvora",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -151,7 +151,6 @@
       "serverSourceMaps": false,
       "linkNoTouchStart": false,
       "caseSensitiveRoutes": false,
-      "clientSegmentCache": true,
       "dynamicOnHover": false,
       "preloadEntriesOnStart": true,
       "clientRouterFilter": true,
@@ -292,12 +291,12 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.js",
     "turbopack": {
-      "root": "/Users/vetri/Downloads/AP/FinNuvora/frontend"
+      "root": "/Users/vetri/Downloads/AP/FinNuvora"
     },
     "distDirRoot": ".next"
   },
   "appDir": "/Users/vetri/Downloads/AP/FinNuvora/frontend",
-  "relativeAppDir": "",
+  "relativeAppDir": "frontend",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",

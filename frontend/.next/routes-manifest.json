@@ -86,6 +86,48 @@
       "regex": "^/dashboard/transactions(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/transactions(?:/)?$"
+    },
+    {
+      "page": "/features",
+      "regex": "^/features(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/features(?:/)?$"
+    },
+    {
+      "page": "/icon.svg",
+      "regex": "^/icon\\.svg(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/icon\\.svg(?:/)?$"
+    },
+    {
+      "page": "/pricing",
+      "regex": "^/pricing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pricing(?:/)?$"
+    },
+    {
+      "page": "/privacy",
+      "regex": "^/privacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/privacy(?:/)?$"
+    },
+    {
+      "page": "/roadmap",
+      "regex": "^/roadmap(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/roadmap(?:/)?$"
+    },
+    {
+      "page": "/security",
+      "regex": "^/security(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/security(?:/)?$"
+    },
+    {
+      "page": "/terms",
+      "regex": "^/terms(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/terms(?:/)?$"
     }
   ],
   "dataRoutes": [],

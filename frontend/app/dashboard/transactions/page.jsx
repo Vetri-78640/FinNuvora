@@ -10,6 +10,7 @@ import { useCurrency } from '@/lib/contexts/CurrencyContext';
 import { useTransactions } from './hooks/useTransactions';
 import TransactionForm from '@/components/transactions/TransactionForm';
 import TransactionTable from '@/components/transactions/TransactionTable';
+import BankConnect from '@/components/BankConnect';
 
 export default function TransactionsPage() {
   useProtectedRoute();
@@ -100,7 +101,8 @@ export default function TransactionsPage() {
           <h2 className="text-3xl font-bold text-text-primary tracking-tight">Transactions</h2>
           <p className="text-text-secondary mt-1">Manage your financial activity</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center flex-wrap">
+          <BankConnect variant="compact" />
           {selectedIds.size > 0 && (
             <button
               onClick={handleBulkDelete}
