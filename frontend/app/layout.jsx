@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { CurrencyProvider } from '@/lib/contexts/CurrencyContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 import FinancialAdvisor from '@/components/FinancialAdvisor';
+import { Analytics } from '@vercel/analytics/next';
 
 const sans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -166,6 +167,7 @@ export default function RootLayout({ children }) {
             <CurrencyProvider>
               {children}
               <FinancialAdvisor />
+              <Analytics />
             </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>
