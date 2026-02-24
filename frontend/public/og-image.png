@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="260" text-anchor="middle" fill="#F5A623" font-family="serif" font-weight="bold" font-size="120">FN</text>
+  <text x="600" y="360" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-size="56">FinNuvora</text>
+  <text x="600" y="420" text-anchor="middle" fill="#888888" font-family="sans-serif" font-size="28">AI-Powered Financial Management Platform</text>
+</svg>

@@ -77,6 +77,10 @@ app.use('/api/insights', insightsRoutes);
 app.use('/api/stocks', stockRoutes);
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/plaid', require('./routes/plaidRoutes'));
+app.use('/api/crypto', require('./routes/cryptoRoutes'));
+app.use('/api/tax', require('./routes/taxRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 
 app.get('/', (_req, res) => {
   res.json({ success: true, message: 'Server is running' });

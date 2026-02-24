@@ -139,4 +139,30 @@ export const plaidAPI = {
   syncTransactions: () => api.post('/plaid/sync_transactions')
 };
 
+export const cryptoAPI = {
+  getHoldings: () => api.get('/crypto/holdings'),
+  addHolding: (data) => api.post('/crypto/holdings', data),
+  updateHolding: (id, data) => api.put(`/crypto/holdings/${id}`, data),
+  deleteHolding: (id) => api.delete(`/crypto/holdings/${id}`),
+  getMarketData: (ids, currency = 'usd') => api.get(`/crypto/market?ids=${ids}&vs_currency=${currency}`),
+  searchCoins: (q) => api.get(`/crypto/search?q=${encodeURIComponent(q)}`),
+};
+
+export const taxAPI = {
+  getSummary: (year) => api.get(`/tax/summary?year=${year}`),
+  exportCSV: (year) => api.get(`/tax/export?year=${year}`, { responseType: 'blob' }),
+};
+
+export const paymentAPI = {
+  getRequests: () => api.get('/payments'),
+  createRequest: (data) => api.post('/payments', data),
+  respondToRequest: (id, status) => api.patch(`/payments/${id}`, { status }),
+};
+
+export const subscriptionAPI = {
+  getCurrent: () => api.get('/subscription'),
+  checkout: (plan) => api.post('/subscription/checkout', { plan }),
+  cancel: () => api.post('/subscription/cancel'),
+};
+
 export default api;

@@ -12,6 +12,14 @@
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
+    "[project]/frontend/app/dashboard/billing/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/dashboard/crypto/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
     "[project]/frontend/app/dashboard/goals/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
@@ -24,11 +32,19 @@
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
+    "[project]/frontend/app/dashboard/payments/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
     "[project]/frontend/app/dashboard/portfolios/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],
     "[project]/frontend/app/dashboard/profile/page": [
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
+      "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
+    ],
+    "[project]/frontend/app/dashboard/tax/page": [
       "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2",
       "static/media/0c89a48fa5027cee-s.p.4564287c.woff2"
     ],

@@ -11,7 +11,10 @@ import {
     Sparkles,
     User,
     LogOut,
-    X
+    X,
+    Bitcoin,
+    Receipt,
+    Send
 } from 'lucide-react';
 
 const menuItems = [
@@ -19,6 +22,9 @@ const menuItems = [
     { name: 'Transactions', href: '/dashboard/transactions', icon: CreditCard },
     { name: 'Goals', href: '/dashboard/goals', icon: Target },
     { name: 'Portfolios', href: '/dashboard/portfolios', icon: Briefcase },
+    { name: 'Crypto', href: '/dashboard/crypto', icon: Bitcoin },
+    { name: 'Tax Summary', href: '/dashboard/tax', icon: Receipt },
+    { name: 'Payments', href: '/dashboard/payments', icon: Send },
     { name: 'AI Advisor', href: '/dashboard/insights', icon: Sparkles },
     { name: 'Profile', href: '/dashboard/profile', icon: User },
 ];

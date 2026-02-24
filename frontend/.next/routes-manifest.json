@@ -58,6 +58,18 @@
       "namedRegex": "^/dashboard(?:/)?$"
     },
     {
+      "page": "/dashboard/billing",
+      "regex": "^/dashboard/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/billing(?:/)?$"
+    },
+    {
+      "page": "/dashboard/crypto",
+      "regex": "^/dashboard/crypto(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/crypto(?:/)?$"
+    },
+    {
       "page": "/dashboard/goals",
       "regex": "^/dashboard/goals(?:/)?$",
       "routeKeys": {},
@@ -70,6 +82,12 @@
       "namedRegex": "^/dashboard/insights(?:/)?$"
     },
     {
+      "page": "/dashboard/payments",
+      "regex": "^/dashboard/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/payments(?:/)?$"
+    },
+    {
       "page": "/dashboard/portfolios",
       "regex": "^/dashboard/portfolios(?:/)?$",
       "routeKeys": {},
@@ -80,6 +98,12 @@
       "regex": "^/dashboard/profile(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/profile(?:/)?$"
+    },
+    {
+      "page": "/dashboard/tax",
+      "regex": "^/dashboard/tax(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/tax(?:/)?$"
     },
     {
       "page": "/dashboard/transactions",
@@ -118,10 +142,22 @@
       "namedRegex": "^/roadmap(?:/)?$"
     },
     {
+      "page": "/robots.txt",
+      "regex": "^/robots\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/robots\\.txt(?:/)?$"
+    },
+    {
       "page": "/security",
       "regex": "^/security(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/security(?:/)?$"
+    },
+    {
+      "page": "/sitemap.xml",
+      "regex": "^/sitemap\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sitemap\\.xml(?:/)?$"
     },
     {
       "page": "/terms",
