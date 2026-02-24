@@ -14,7 +14,6 @@ const authLimiter = rateLimit({
     skipSuccessfulRequests: false,
   // Extract email from request body for rate limiting
   keyGenerator: (req) => {
-    // Rate limit by email address to prevent account takeover attempts
     return req.body?.email || 'anonymous';
   },
   handler: (_req, res) => {
@@ -23,8 +22,6 @@ const authLimiter = rateLimit({
       error: 'Too many login attempts. Please try again later.'
     });
   },
-  // Don't use IP-based detection if custom keyGenerator is set
-  // This avoids the IPv6 validation error
 });
 
 module.exports = {

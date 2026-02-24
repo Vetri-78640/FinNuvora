@@ -1,11 +1,12 @@
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const connectMongoDB = require('./config/mongodb');
 const errorHandler = require('./middleware/errorHandler');
 const { authLimiter } = require('./middleware/rateLimiter');
+const securityHeaders = require('./middleware/security');
 const authRoutes = require('./routes/authRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const holdingRoutes = require('./routes/holdingRoutes');
@@ -23,31 +24,20 @@ const PORT = process.env.PORT || 4000;
 
 app.use(express.json({ limit: '1mb' })); // Limit JSON payload
 app.use(fileUpload({
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max i made this will see if i need more
   useTempFiles: true,
   tempFileDir: '/tmp/',
 }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  next();
-});
+
+app.use(securityHeaders);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Strict Allow List:
-    // 1. Localhost for development
-    // 2. The exact FRONTEND_URL from env vars (Production)
-    // 3. Vercel Preview URLs that belong to THIS project (contain 'fin-nuvora')
     const isAllowed =
       origin === 'http://localhost:3000' ||
       origin === process.env.FRONTEND_URL ||
@@ -65,9 +55,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting - only on auth endpoints (custom email-based limiter)
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
+
+// Debug Logger
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Received ${req.method} request for: ${req.url}`);
+  next();
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolio', portfolioRoutes);

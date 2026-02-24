@@ -1,80 +1,30 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
 import {
-  Plus,
-  Calendar,
-  SlidersHorizontal,
-  Search,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  MoreHorizontal,
-  ArrowUp,
-  Download,
-  Upload,
-  RefreshCw,
-  Wallet,
-  PieChart
+  Plus, Calendar, SlidersHorizontal, Search, TrendingUp, TrendingDown,
+  ArrowUpRight, ArrowUp, Download, Upload, RefreshCw, Wallet, PieChart
 } from 'lucide-react';
 import ExpenditureChart from '@/components/dashboard/ExpenditureChart';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
-import { transactionAPI, portfolioAPI, userAPI } from '@/lib/api';
 import Link from 'next/link';
 import { useCurrency } from '@/lib/contexts/CurrencyContext';
+import { useDashboardData } from './hooks/useDashboardData';
 
 export default function DashboardPage() {
   useProtectedRoute();
   const { formatCurrency } = useCurrency();
-  const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState([]);
-  const [portfolios, setPortfolios] = useState([]);
-  const [userProfile, setUserProfile] = useState(null);
-  const [stats, setStats] = useState({
-    income: 0,
-    expense: 0,
-    investment: 0,
-    balance: 0
-  });
+  const { transactions, portfolios, userProfile, stats, loading } = useDashboardData();
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [txRes, portRes, userRes] = await Promise.all([
-          transactionAPI.getTransactions({ limit: 5 }),
-          portfolioAPI.getPortfolios(),
-          userAPI.getProfile()
-        ]);
-
-        setTransactions(txRes.data.transactions || []);
-        setPortfolios(portRes.data.portfolios || []);
-        setUserProfile(userRes);
-
-        // Calculate stats from transactions (simplified logic for demo)
-        // In a real app, backend should provide aggregated stats
-        const allTx = txRes.data.transactions || [];
-        const income = allTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expense = allTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const investment = allTx.filter(t => t.type === 'investment').reduce((sum, t) => sum + t.amount, 0);
-
-        setStats({
-          income,
-          expense,
-          investment,
-          balance: userRes.data.user.accountBalance || 0
-        });
-
-      } catch (error) {
-        console.error("Failed to load dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadDashboardData();
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const recentTransactions = transactions.slice(0, 3);
+  const monthlyLimit = userProfile?.data?.user?.monthlyLimit || 600;
 
   return (
     <div className="space-y-6">
@@ -105,7 +55,7 @@ export default function DashboardPage() {
         {/* Left Main Column */}
         <div className="xl:col-span-2 space-y-6">
 
-          {/* 4 Stat Cards (Real Data) */}
+          {/* 4 Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: Wallet, title: "Total Balance", value: formatCurrency(stats.balance), bg: "bg-[#000000]", iconBg: "bg-yellow-100 text-yellow-600" },
@@ -142,7 +92,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Transaction History (Real Data) */}
+          {/* Transaction History */}
           <div className="bg-[#000000] p-6 rounded-3xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white">Recent Transactions</h3>
@@ -158,7 +108,7 @@ export default function DashboardPage() {
                   No transactions yet. Start by adding one!
                 </div>
               ) : (
-                recentTransactions.map((tx, i) => (
+                recentTransactions.map((tx) => (
                   <div key={tx._id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl transition-colors">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-green-500/20 text-green-500' :
@@ -190,7 +140,7 @@ export default function DashboardPage() {
         {/* Right Sidebar Column */}
         <div className="space-y-6">
 
-          {/* Investments (Real Data) */}
+          {/* Investments */}
           <div className="bg-[#000000] p-6 rounded-3xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white">Your Portfolios</h3>
@@ -206,7 +156,7 @@ export default function DashboardPage() {
                   No portfolios created yet.
                 </div>
               ) : (
-                portfolios.slice(0, 4).map((item, i) => (
+                portfolios.slice(0, 4).map((item) => (
                   <div key={item._id} className="bg-[#2C2C2E] p-4 rounded-2xl flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-black">
@@ -255,20 +205,20 @@ export default function DashboardPage() {
                 <div
                   className="h-full bg-white rounded-full transition-all duration-500"
                   style={{
-                    width: `${Math.min((stats.expense / (userProfile?.data?.user?.monthlyLimit || 600)) * 100, 100)}%`
+                    width: `${Math.min((stats.expense / monthlyLimit) * 100, 100)}%`
                   }}
                 />
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="font-bold text-white">{formatCurrency(stats.expense)}</span>
                 <span className="text-[10px] text-gray-500">
-                  of {formatCurrency(userProfile?.data?.user?.monthlyLimit || 600)} limit
+                  of {formatCurrency(monthlyLimit)} limit
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Currency Rates (Static for now, but cleaner) */}
+          {/* Currency Rates */}
           <div className="space-y-3">
             <div className="p-4 bg-[#000000] rounded-2xl flex justify-between items-center">
               <div className="flex items-center gap-3">

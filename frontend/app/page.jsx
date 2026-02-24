@@ -38,11 +38,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] flex flex-col font-sans text-text-primary overflow-x-hidden">
+    <div className="min-h-screen bg-[#000000] flex flex-col font-sans text-text-primary">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="pt-24 md:pt-32 pb-16 md:pb-20 px-6 relative overflow-hidden">
+      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
         {/* Background Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
@@ -80,7 +80,7 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Highlight 1 */}
-      <section className="py-16 md:py-24 px-6 relative">
+      <section className="py-24 px-6 relative">
         <div className="absolute top-1/2 left-0 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-blue-500/10 rounded-full blur-[100px] -z-10" />
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 space-y-6">
@@ -176,7 +176,7 @@ export default function LandingPage() {
           </div>
           <div className="flex-1">
             {/* Detailed Mock UI: AI Insights Stack */}
-            <div className="relative h-[450px] sm:h-[400px] w-full flex items-center justify-center mt-8 sm:mt-0">
+            <div className="relative h-[400px] w-full flex items-center justify-center">
               {/* Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
 
@@ -236,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 px-6 bg-surface/30 border-y border-white/5">
+      <section className="py-24 px-6 bg-surface/30 border-y border-white/5">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Loved by Finance Experts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -257,7 +257,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 md:py-32 px-6 relative overflow-hidden">
+      <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 tracking-tight">Start your financial revolution.</h2>

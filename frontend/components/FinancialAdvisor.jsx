@@ -1,73 +1,30 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { chatAPI } from '@/lib/api';
+import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useChat } from '@/lib/hooks/useChat';
 
 export default function FinancialAdvisor() {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const pathname = usePathname();
 
-
+    // Use Custom Hook
+    const { messages, loading, sendMessage } = useChat({ isOpen });
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        if (isOpen) {
-            loadHistory();
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    const loadHistory = async () => {
-        try {
-            const { data } = await chatAPI.getHistory();
-            if (data.success) {
-                setMessages(data.messages || []);
-            }
-        } catch (err) {
-            console.error('Failed to load chat history', err);
-        }
-    };
-
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!input.trim() || loading) return;
-
-        const userMessage = input.trim();
+        await sendMessage(input);
         setInput('');
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-        setLoading(true);
-
-        try {
-            const { data } = await chatAPI.sendMessage(userMessage);
-            if (data.success) {
-                // Update with full history to ensure sync
-                setMessages(data.history);
-
-                // If an action was taken (like adding a transaction), refresh the page data
-                if (data.actionTaken) {
-                    window.location.reload(); // Simple reload to fetch new data
-                }
-            }
-        } catch (err) {
-            console.error('Failed to send message', err);
-            setMessages(prev => [...prev, {
-                role: 'model',
-                content: 'Sorry, I encountered an error. Please try again.'
-            }]);
-        } finally {
-            setLoading(false);
-        }
     };
 
     // Only show on dashboard pages
