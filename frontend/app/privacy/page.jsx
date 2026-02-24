@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
                         <Shield size={14} />
                         <span>Last Updated: November 2025</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
                         Privacy Policy
                     </h1>
                     <p className="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">

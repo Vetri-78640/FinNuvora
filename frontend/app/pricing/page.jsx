@@ -16,7 +16,7 @@ export default function PricingPage() {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="text-center mb-16 space-y-6 animate-fade-in">
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+                        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
                             Simple, Transparent Pricing
                         </h1>
                         <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">
@@ -124,7 +124,7 @@ export default function PricingPage() {
 
 function PricingCard({ title, price, description, features, buttonText, buttonVariant, popular }) {
     return (
-        <div className={`relative p-8 rounded-3xl border flex flex-col ${popular ? 'bg-surface-elevated border-primary/50 shadow-2xl shadow-primary/10 scale-105 z-10' : 'bg-surface border-white/5 hover:border-white/10'}`}>
+        <div className={`relative p-6 sm:p-8 rounded-3xl border flex flex-col ${popular ? 'bg-surface-elevated border-primary/50 shadow-2xl shadow-primary/10 md:scale-105 z-10' : 'bg-surface border-white/5 hover:border-white/10'}`}>
             {popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-background text-sm font-bold shadow-lg">
                     Most Popular

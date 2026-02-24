@@ -29,8 +29,8 @@ export default function FeaturesPage() {
                             <Zap size={16} className="fill-purple-500/20" />
                             <span>Powerful Capabilities</span>
                         </div>
-                        <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
-                            Everything you need to <br /> master your money.
+                        <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+                            Everything you need to <br className="hidden sm:block" /> master your money.
                         </h1>
                         <p className="text-text-secondary text-xl max-w-3xl mx-auto leading-relaxed">
                             FinNuvora isn't just a tracker; it's a comprehensive financial operating system designed to help you build wealth with confidence.
@@ -43,7 +43,7 @@ export default function FeaturesPage() {
                             <div className="w-16 h-16 rounded-3xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                                 <LayoutDashboard size={32} />
                             </div>
-                            <h2 className="text-4xl font-bold text-white">Command Center for Your Finances</h2>
+                            <h2 className="text-2xl sm:text-4xl font-bold text-white">Command Center for Your Finances</h2>
                             <p className="text-text-secondary text-lg leading-relaxed">
                                 Stop juggling multiple apps. Our unified dashboard gives you a crystal-clear view of your entire financial life in real-time. From daily spending to long-term investments, see it all at a glance.
                             </p>
@@ -58,9 +58,9 @@ export default function FeaturesPage() {
                             <div className="relative bg-[#121212] border border-white/10 rounded-3xl p-8 aspect-video flex flex-col gap-4 overflow-hidden">
                                 {/* Mock UI Elements */}
                                 {/* Mock UI Elements */}
-                                <div className="flex h-full gap-8 relative z-10 items-center">
+                                <div className="flex flex-col sm:flex-row h-full gap-4 sm:gap-8 relative z-10 items-center">
                                     {/* Left: Glass Card */}
-                                    <div className="flex-1 relative group/card perspective-1000">
+                                    <div className="hidden sm:block flex-1 relative group/card perspective-1000">
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary to-orange-600 rounded-2xl transform -rotate-6 translate-y-4 opacity-40 blur-xl transition-all duration-500 group-hover/card:opacity-60" />
                                         <div className="relative bg-gradient-to-br from-white/10 to-white/5 border border-white/20 backdrop-blur-md rounded-2xl p-6 aspect-[1.58/1] flex flex-col justify-between transform rotate-0 transition-transform duration-500 group-hover/card:rotate-1 group-hover/card:scale-105 shadow-2xl">
                                             <div className="flex justify-between items-start">
@@ -134,7 +134,7 @@ export default function FeaturesPage() {
                             <div className="w-16 h-16 rounded-3xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
                                 <Sparkles size={32} />
                             </div>
-                            <h2 className="text-4xl font-bold text-white">Your Personal AI Financial Architect</h2>
+                            <h2 className="text-2xl sm:text-4xl font-bold text-white">Your Personal AI Financial Architect</h2>
                             <p className="text-text-secondary text-lg leading-relaxed">
                                 Meet your new financial genius. Our AI analyzes your spending patterns, investment risk, and goals to provide actionable, personalized advice 24/7.
                             </p>
@@ -212,9 +212,9 @@ export default function FeaturesPage() {
                     </div>
 
                     {/* CTA */}
-                    <div className="text-center bg-black from-surface to-surface-elevated border border-white/5 rounded-[3rem] p-12 relative overflow-hidden">
+                    <div className="text-center bg-black from-surface to-surface-elevated border border-white/5 rounded-3xl sm:rounded-[3rem] p-6 sm:p-12 relative overflow-hidden">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.15),transparent_50%)]" />
-                        <h2 className="text-4xl font-bold text-white mb-6 relative z-10">Ready to take control?</h2>
+                        <h2 className="text-2xl sm:text-4xl font-bold text-white mb-6 relative z-10">Ready to take control?</h2>
                         <p className="text-text-secondary text-lg mb-8 max-w-xl mx-auto relative z-10">
                             Join thousands of users who are building a better financial future with FinNuvora.
                         </p>

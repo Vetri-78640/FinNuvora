@@ -625,7 +625,7 @@ export default function PortfoliosPage() {
                       </h4>
 
                       {holdings.length === 0 ? (
-                        <div className="text-center py-8 border border-dashed border-border rounded-full">
+                        <div className="text-center py-8 border border-dashed border-border rounded-2xl">
                           <p className="text-text-secondary text-sm">No holdings recorded yet.</p>
                         </div>
                       ) : (
@@ -640,7 +640,7 @@ export default function PortfoliosPage() {
                             return (
                               <div
                                 key={holding._id}
-                                className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface border rounded-full p-4 transition-colors ${editingHoldingId === holding._id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+                                className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface border rounded-2xl p-4 transition-colors ${editingHoldingId === holding._id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
                               >
                                 <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-bold text-xs">
@@ -661,7 +661,7 @@ export default function PortfoliosPage() {
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-6 md:justify-end flex-1">
+                                <div className="flex flex-wrap items-center gap-4 md:gap-6 md:justify-end flex-1">
                                   <div className="text-right">
                                     <p className="text-text-secondary text-xs">Current Price</p>
                                     <p className="font-mono text-text-primary text-sm">

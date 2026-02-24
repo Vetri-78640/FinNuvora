@@ -174,14 +174,14 @@ export default function LandingPage() {
               <CheckItem text="Tax Optimization Tips" />
             </ul>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             {/* Detailed Mock UI: AI Insights Stack */}
-            <div className="relative h-[400px] w-full flex items-center justify-center">
+            <div className="relative sm:h-[400px] w-full flex items-center justify-center">
               {/* Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
 
-              {/* Card 2 (Back) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[90%] bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 opacity-40 scale-90 blur-[1px]">
+              {/* Card 2 (Back) - hidden on mobile */}
+              <div className="hidden sm:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[90%] bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 opacity-40 scale-90 blur-[1px]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
                     <TrendingUp size={16} className="text-blue-500" />
@@ -192,8 +192,8 @@ export default function LandingPage() {
                 <div className="h-2 w-2/3 bg-white/10 rounded-full" />
               </div>
 
-              {/* Card 1 (Middle) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] w-[95%] bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 opacity-70 scale-95 shadow-xl">
+              {/* Card 1 (Middle) - hidden on mobile */}
+              <div className="hidden sm:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] w-[95%] bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 opacity-70 scale-95 shadow-xl">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
                     <ArrowRight size={20} className="text-red-500 rotate-[-45deg]" />
@@ -206,8 +206,8 @@ export default function LandingPage() {
                 <p className="text-sm text-text-secondary">You've exceeded your dining budget by <span className="text-white font-bold">$120</span> this month.</p>
               </div>
 
-              {/* Main Card (Front) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full bg-[#121212] border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl z-10 hover:-translate-y-[52%] transition-transform duration-300">
+              {/* Main Card (Front) - static on mobile, absolute on sm+ */}
+              <div className="relative sm:absolute sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full bg-[#121212] border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl z-10 sm:hover:-translate-y-[52%] sm:hover:-translate-x-1/2 transition-transform duration-300">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
                     <Zap size={12} />

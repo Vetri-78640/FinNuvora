@@ -21,6 +21,7 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Protect all dashboard routes
   useProtectedRoute();
@@ -36,6 +37,11 @@ export default function DashboardLayout({ children }) {
     }
   }, []);
 
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   const activeMetaKey = Object.keys(pageMeta).find((key) => pathname.startsWith(key)) || '/dashboard';
   const { title } = pageMeta[activeMetaKey] || { title: 'Dashboard' };
 
@@ -48,15 +54,23 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="flex h-screen bg-background text-text-primary overflow-hidden font-sans">
       {/* Sidebar */}
-      <Sidebar onLogout={handleLogout} />
+      <Sidebar
+        onLogout={handleLogout}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
         {/* Top Bar */}
-        <TopBar user={user} title={title} />
+        <TopBar
+          user={user}
+          title={title}
+          onMenuToggle={() => setSidebarOpen(true)}
+        />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

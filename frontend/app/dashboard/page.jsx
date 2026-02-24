@@ -64,7 +64,7 @@ export default function DashboardPage() {
               { icon: TrendingDown, title: "Total Expenses", value: formatCurrency(stats.expense), bg: "bg-[#000000]", iconBg: "bg-red-100 text-red-600" },
               { icon: PieChart, title: "Investments", value: formatCurrency(stats.investment), bg: "bg-[#000000]", iconBg: "bg-blue-100 text-blue-600" },
             ].map((stat, i) => (
-              <div key={i} className={`${stat.bg} p-5 rounded-3xl flex flex-col items-center text-center gap-3 hover:bg-white/5 transition-colors cursor-pointer group`}>
+              <div key={i} className={`${stat.bg} p-3 md:p-5 rounded-3xl flex flex-col items-center text-center gap-2 md:gap-3 hover:bg-white/5 transition-colors cursor-pointer group`}>
                 <div className={`w-12 h-12 rounded-full ${stat.iconBg} flex items-center justify-center mb-1`}>
                   <stat.icon size={20} />
                 </div>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Expenditures Chart */}
-          <div className="bg-[#000000] p-6 rounded-3xl">
+          <div className="bg-[#000000] p-4 md:p-6 rounded-3xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white text-lg">Expenditure Analytics</h3>
               <div className="flex gap-2">
@@ -94,7 +94,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Transaction History */}
-          <div className="bg-[#000000] p-6 rounded-3xl">
+          <div className="bg-[#000000] p-4 md:p-6 rounded-3xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white">Recent Transactions</h3>
               <Link href="/dashboard/transactions">

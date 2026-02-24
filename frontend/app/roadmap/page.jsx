@@ -7,7 +7,7 @@ import { CheckCircle2, Circle, Clock, ArrowRight, Star, CircleDot } from 'lucide
 export default function RoadmapPage() {
     const roadmapItems = [
         {
-            quarter: 'Q1 2024',
+            quarter: 'Phase 1',
             status: 'completed',
             title: 'Foundation & Core Features',
             items: [
@@ -19,11 +19,11 @@ export default function RoadmapPage() {
             ]
         },
         {
-            quarter: 'Q2 2024',
-            status: 'in-progress',
+            quarter: 'Phase 2',
+            status: 'completed',
             title: 'AI Insights & Advanced Analytics',
             items: [
-                'AI-Powered Financial Advisor (Beta)',
+                'AI-Powered Financial Advisor (Gemini)',
                 'Smart Budgeting & Expense Forecasting',
                 'Investment Performance Analysis',
                 'Goal Setting & Progress Tracking',
@@ -31,20 +31,20 @@ export default function RoadmapPage() {
             ]
         },
         {
-            quarter: 'Q3 2024',
-            status: 'planned',
-            title: 'Community & Integration',
+            quarter: 'Phase 3',
+            status: 'completed',
+            title: 'Integration & Enhancement',
             items: [
-                'Bank Account Integration (Plaid/Yodlee)',
-                'Social Investment Features',
-                'Export Reports (PDF/CSV)',
-                'Customizable Widgets',
-                'Multi-currency Support'
+                'Bank Account Integration (Plaid)',
+                'Multi-currency Support',
+                'Expenditure Analytics Charts',
+                'Profile & Settings Management',
+                'Responsive UI Across All Devices'
             ]
         },
         {
-            quarter: 'Q4 2024',
-            status: 'planned',
+            quarter: 'Phase 4',
+            status: 'in-progress',
             title: 'Expansion & Ecosystem',
             items: [
                 'Mobile App Launch (iOS & Android)',
@@ -68,7 +68,7 @@ export default function RoadmapPage() {
                             <Star size={16} className="fill-primary" />
                             <span>Our Journey & Future</span>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+                        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
                             Product Roadmap
                         </h1>
                         <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">

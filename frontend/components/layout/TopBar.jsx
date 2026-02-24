@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Sun, Moon, LogOut, User, Settings } from 'lucide-react';
+import { Search, Bell, Sun, Moon, LogOut, User, Settings, Menu } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { removeCookie } from '@/lib/cookies';
 
-export default function TopBar({ user, title }) {
+export default function TopBar({ user, title, onMenuToggle }) {
     const { theme, setTheme } = useTheme();
     const router = useRouter();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -52,25 +52,33 @@ export default function TopBar({ user, title }) {
     };
 
     return (
-        <div className="h-20 px-8 flex items-center justify-between border-b border-border bg-background/50 backdrop-blur-xl sticky top-0 z-10">
-            {/* Title/Breadcrumb */}
-            <div>
-                <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
+        <div className="h-16 lg:h-20 px-4 lg:px-8 flex items-center justify-between border-b border-border bg-background/50 backdrop-blur-xl sticky top-0 z-10">
+            {/* Left: Hamburger + Title */}
+            <div className="flex items-center gap-3">
+                {/* Hamburger - mobile only */}
+                <button
+                    onClick={onMenuToggle}
+                    className="lg:hidden p-2 -ml-1 text-text-secondary hover:text-text-primary rounded-xl hover:bg-white/5 transition-colors"
+                >
+                    <Menu size={22} />
+                </button>
+
+                <h1 className="text-lg lg:text-2xl font-bold text-text-primary">{title}</h1>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 lg:gap-4">
                 {/* User Profile Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-3 pl-4 border-l border-border cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-border cursor-pointer hover:opacity-80 transition-opacity"
                     >
                         <div className="text-right hidden md:block">
                             <div className="text-sm font-bold text-text-primary">{user?.name || 'User'}</div>
                             <div className="text-xs text-text-secondary">Welcome Back!</div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-surface-elevated border border-border overflow-hidden">
+                        <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-surface-elevated border border-border overflow-hidden">
                             {localProfilePic || user?.profilePicture ? (
                                 <img
                                     src={localProfilePic || (user.profilePicture.startsWith('blob:') ? user.profilePicture : `${process.env.NEXT_PUBLIC_API_URL.replace('/api', '')}${user.profilePicture}`)}

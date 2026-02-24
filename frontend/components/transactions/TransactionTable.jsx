@@ -21,7 +21,7 @@ export default function TransactionTable({
     return (
         <div className="card overflow-hidden">
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                         <tr className="border-b border-border bg-surface-elevated/50">
                             <th className="py-4 px-6 w-10">
@@ -92,7 +92,7 @@ export default function TransactionTable({
                                         {transaction.type === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount)}
                                     </td>
                                     <td className="py-4 px-6 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => onEdit(transaction)}
                                                 className="p-2 rounded-lg hover:bg-surface text-text-secondary hover:text-primary transition-colors"
