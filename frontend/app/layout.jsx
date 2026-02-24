@@ -104,9 +104,7 @@ export const metadata = {
   },
   category: 'finance',
   verification: {
-    // Add your verification codes when ready:
-    // google: 'your-google-verification-code',
-    // yandex: 'your-yandex-verification-code',
+    google: 'j8xEoKJ5Kkzs8JFEYELJwsApTB8qgghaPiCLDiUX7qs',
   },
 };
 
